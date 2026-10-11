@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="translation_credits">Prevedel fr3ts0n</string>
-    <string name="app_description">Android aplikacija za OBD diagnostiko z ELM327 adapterji</string>
+    <string name="translation_credits">Prevedel Aha999</string>
+    <string name="app_description">Android aplikacija za OBD diagnostiko z adapterji ELM327</string>
     <string name="title_connecting">Povezovanje…</string>
     <string name="title_connected_to">Povezano %s</string>
     <string name="logo">Logotip</string>
@@ -35,8 +35,8 @@
     <string name="common_settings">Pogoste nastavitve</string>
     <string name="measure_system_description">Sistem merskih enot (metrični/imperialni)</string>
     <string name="measure_system">Merske enote</string>
-    <string name="metric">metrični</string>
-    <string name="imperial">imperialni</string>
+    <string name="metric">metrične</string>
+    <string name="imperial">imperialne</string>
     <string name="debugging">Odpravljanje napak</string>
     <string name="last_elm">Znova vzpostavi povezavo z zadnjim ELM adapterjem</string>
     <string name="last_ecu">Znova vzpostavi povezavo z zadnjim ELM</string>
@@ -49,13 +49,12 @@
     <string name="obd_options">OBD možnosti</string>
     <string name="obd_opt_description">Možnosti OBD protokola / komunikacije z vozilom</string>
     <string name="select_protocol">Prednostni OBD protokol</string>
-    <string name="plugin_manager">Upravljalec vtičnikov</string>
+    <string name="plugin_manager">Upravljanje vtičnikov</string>
     <string name="configure">Konfiguriraj</string>
     <string name="select_fault_code">Izberi kodo napake …</string>
     <string name="select_medium">Tip adapterja …</string>
     <string name="devices_found">%d odkritih USB naprav</string>
     <string name="day_night_mode">Dnevni/Nočni način</string>
-    <string name="night_mode">Nočni način</string>
     <string name="disable_elm_cmds">Onemogočeni ELM ukazi</string>
     <string name="disable_elm_cmds_descr">omogoči/onemogoči ELM ukaze</string>
     <string name="select_ecu_addr">Izberi ECU naslov …</string>
@@ -83,22 +82,17 @@
     <string name="autohide_toolbar">Skrij orodno vrstico</string>
     <string name="autohide_toolbar_description">Samodejno skrij orodno vrstico v času brez dejavnosti</string>
     <string name="csv_export_options">Možnosti izvoza CSV</string>
-    <string name="license">Licenciranje …</string>
+    <string name="license">Licence …</string>
     <string name="donation">Podpri projekt …</string>
     <string name="libraries">Knjižnice …</string>
     <string name="libraries_sum">Knjižnice uporabljene v projektu …</string>
     <string name="release_history">Zgodovina različic …</string>
     <string name="graphic_design">Grafični dizajn</string>
-    <string name="plugin_data">Podatki vtičnikov</string>
     <string name="long_press_dfc_hint">Dolgi pritisk na DFC za spletno iskanje …</string>
-    <string name="unfilter">Odstrani filter</string>
-    <string name="plugin_manager_desc">Upravljalec zaznanih vtičnikov</string>
-    <string name="graph_actions">Dejanja grafa</string>
     <string name="back_again_to_exit">Znova pritisni gumb Nazaj, da zapreš aplikacijo</string>
     <string name="filter">Filter izbran</string>
     <string name="unabletoconnect">Povezava z napravo je neuspešna</string>
     <string name="connectionlost">Povezava z napravo je bila izgubljena</string>
-    <string name="night_mode_description">Nastavi zaslon na temno ozadje</string>
     <string name="INITIALIZING">Inicializacija…</string>
     <string name="INITIALIZED">Inicializirano</string>
     <string name="device_port">ELM IP vhod</string>
@@ -116,7 +110,7 @@
     <string name="logging_level_description">Količina podrobnosti, ki bo beležena v dnevnik za odpravljanje napak</string>
     <string name="last_data_items">Uporabi zadnje izbrane podatkovne predmete</string>
     <string name="last_view_mode">zadnji način prikaza podatkov</string>
-    <string name="keep_screen_on_description">Ne izključi zaslona, če je na njem prikaz glavnih podatkov</string>
+    <string name="keep_screen_on_description">Ne izključi zaslona, če so na njem prikazani glavni podatki</string>
     <string name="dev_opt_description">Možnosti za odpravljanje napak in prilagodljivost</string>
     <string name="extension_files">Datoteke za prilagodljivost protokola (CSV)</string>
     <string name="select_extension">Izberi datoteko .csv …</string>
@@ -129,5 +123,63 @@
     <string name="send_after_export">Pošlji po izvozu</string>
     <string name="send_after_export_descr">Vprašaj za pošiljanje CSV datoteke takoj po izvozu\?</string>
     <string name="toolbar_overlay_sum">Prikaži orodno vrstico nad glavnim zaslonom</string>
-    <string name="process_vars">Spremenljivke procesa</string>
+    <string name="obd_clear_info">To bo ponastavilo MIL lučko motorja in počistilo vso diagnostiko,
+\npovezano z emisijskimi podatki, vključujoč:
+\n- Diagnostične kode napak
+\n- Freeze frame podatki
+\n- Testni podatki senzorja kisika
+\n- Status spremljanja sistemskih testov
+\n- Rezultati spremljanja podatkov na krovu (on-board)
+\n- Prepotovana razdalja od vključitve MIL (lučke za motor)
+\n- Število zagonov motorja od zadnjega brisanja DTC kod napak
+\n- Prepotovana razdalja od zadnjega brisanja DTC kod napak
+\n- Čas delovanja motorja od aktivacije MIL lučke za motor
+\n- Čas od zadnjega brisanja DTC kod napak
+\n
+\nLahko se izvede še drugo specifično čiščenje/ponastavljanje glede na proizvajalca.
+\nIzguba podatkov lahko povzroči slabo delovanje vozila za kratek čas, 
+\ndokler se ECU računalnik ne re-kalibrira.</string>
+    <string name="comm_baudrate_description">Hitrost serijske komunikacije USB</string>
+    <string name="comm_baudrate">ELM hitrost prenosa</string>
+    <string name="csv_text_quoted_description">CSV podatkovna polja so vključena v narekovajih</string>
+    <string name="csv_text_quoted">CSV besedilo v narekovajih</string>
+    <string name="csv_rec_delimiter_description">Ločilni znak(i) med CSV podatkovnimi zapisi</string>
+    <string name="csv_rec_delimiter">CSV ločilo zapisa</string>
+    <string name="csv_field_delimiter_description">Ločilni znak(i) med CSV podatkovnimi polji</string>
+    <string name="csv_field_delimiter">ločilo CSV polj</string>
+    <string name="data_disable_max_description">Število zaporednih neveljavnih podatkovnih odzivov, preden bo predmet onemogočen</string>
+    <string name="data_disable_max">Onemogoči limit podatkovnih predmetov</string>
+    <string name="device_port_description">IP vhod omrežja ELM naprave</string>
+    <string name="elm_custom_init_descr">ELM zagonski ukazi po meri</string>
+    <string name="use_last_settings_description">Uporabi zadnje nastavitve ob zagonu (BT naslov, ECU naslov, Prikazni predmeti...)</string>
+    <string name="elm_custom_init">ELM zagon po meri</string>
+    <string name="reset_preselections">Ponastavi zadnje pred-izbire</string>
+    <string name="elm_reset_on_nrc_descr">Ponastavi ELM adapter na napaki NRC\?</string>
+    <string name="elm_reset_on_nrc">Ponastavi na NRC</string>
+    <string name="elm_adaptive_timing_descr">Dovoli prilagodljivo upravljanje časovnika v ELM gonilnikih\?</string>
+    <string name="elm_adaptive_timing">ELM prilagodljiv časovnik</string>
+    <string name="elm_timeout_descr">Minimalni iztek v [ms] čakanja na odziv ELM</string>
+    <string name="min_elm_timeout">Min. ELM iztek [ms]</string>
+    <string name="service_freezeframes">OBD Freeze Frames</string>
+    <string name="obd_test_confirm">Zahtevan je nadzor preskusa OBD.
+\n
+\nZahtevani nadzor preskusa OBD lahko ustvari:
+\n- Gibanje vozila
+\n- izpušni dim
+\n- Visoko temperaturo izpušnih plinov
+\n- Glasen hrup motorja
+\n- hlape goriva
+\n- itd.
+\n
+\nPotrdite, da boste ta testni nadzor izvedli na lastno odgovornost samo v varnem testnem okolju!</string>
+    <string name="obd_test_progress">V teku je nadzor preskusa OBD.
+\nPreverite reakcijo vozila.</string>
+    <string name="service_testcontrol">OBD testni nadzor</string>
+    <string name="copied_to_clipboard">Kopirano v odložišče</string>
+    <string name="full_screen_display">Celozaslonski prikaz</string>
+    <string name="full_screen_display_description">Uporaba celotnega zaslona za prikaz aplikacije</string>
+    <string name="display_color">Barva zaslona</string>
+    <string name="customize_display">Prilagajanje prikaza podatkov</string>
+    <string name="display_range">Območje prikaza</string>
+    <string name="reset_default">Privzeto</string>
 </resources>

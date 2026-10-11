@@ -1,85 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
-
+<!--
+    Main menu for AndrOBD application
+    Provides access to key features in a logical grouping:
+    - Connection management (Connect/Disconnect)
+    - Data operations (Save/Load measurements)
+    - Application settings and customization
+    - OBD diagnostic services (submenu)
+    
+    Compatible with Android 4.1+ (API 16+) using standard Android menu components
+    for maximum compatibility and maintainability.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- Connection Management Group -->
     <item
         android:id="@+id/secure_connect_scan"
         android:icon="@drawable/action_connect"
-        android:showAsAction="always"
         android:title="@string/action_connect"
         android:visible="true"
-        />
+        app:showAsAction="always" />
     <item
         android:id="@+id/disconnect"
         android:icon="@drawable/action_disconnect"
-        android:showAsAction="always"
         android:title="@string/disconnect"
         android:visible="false"
-        />
-    <item
-        android:id="@+id/day_night_mode"
-        android:icon="@drawable/ic_daynight"
-        android:showAsAction="ifRoom"
-        android:title="@string/day_night_mode"/>
+        app:showAsAction="always" />
+
+    <!-- Data Management Group -->
     <item
         android:id="@+id/save"
-        android:icon="@android:drawable/ic_menu_save"
-        android:showAsAction="ifRoom"
-        android:title="@string/save"/>
+        android:icon="@drawable/ic_save"
+        android:title="@string/save" />
     <item
         android:id="@+id/load"
         android:icon="@drawable/ic_action_load"
-        android:showAsAction="ifRoom"
-        android:title="@string/load"/>
+        android:title="@string/load" />
+
+    <!-- Display and View Options -->
     <item
-        android:id="@+id/reset_preselections"
-        android:icon="@android:drawable/ic_menu_delete"
-        android:showAsAction="ifRoom"
-        android:title="@string/reset_preselections"/>
+        android:id="@+id/day_night_mode"
+        android:icon="@drawable/ic_daynight"
+        android:title="@string/day_night_mode" />
+
+    <!-- Configuration and Management -->
+    <item
+        android:id="@+id/settings"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="@string/settings" />
     <item
         android:id="@+id/plugin_manager"
         android:icon="@android:drawable/ic_menu_manage"
-        android:showAsAction="ifRoom"
         android:title="@string/plugin_manager" />
     <item
-        android:id="@+id/settings"
-        android:icon="@android:drawable/ic_menu_preferences"
-        android:showAsAction="ifRoom"
-        android:title="@string/settings" />
+        android:id="@+id/reset_preselections"
+        android:icon="@android:drawable/ic_menu_delete"
+        android:title="@string/reset_preselections" />
 
+    <!-- OBD Diagnostic Services (Primary feature access) -->
     <item
         android:id="@+id/obd_services"
         android:icon="@android:drawable/ic_menu_more"
-        android:menuCategory="container"
-        android:showAsAction="always"
-        android:title="@string/obd_services">
+        android:enabled="false"
+        android:title="@string/obd_services"
+        app:showAsAction="ifRoom">
         <menu>
-            <item
-                android:id="@+id/service_none"
-                android:title="@string/obd_none"
-                android:visible="false"/>
-            <item
-                android:id="@+id/service_vid_data"
-                android:title="@string/obd_veh_info"/>
-            <item
-                android:id="@+id/service_data"
-                android:title="@string/obd_data"/>
-            <item
-                android:id="@+id/service_freezeframes"
-                android:enabled="false"
-                android:title="@string/service_freezeframes"/>
-            <item
-                android:id="@+id/service_codes"
-                android:title="@string/obd_codes"/>
-            <item
-                android:id="@+id/service_pendingcodes"
-                android:title="@string/obd_pendingcodes"/>
-            <item
-                android:id="@+id/service_permacodes"
-                android:title="@string/obd_permanentcodes"/>
-            <item
-                android:id="@+id/service_clearcodes"
-                android:title="@string/obd_clearcodes"/>
+            <!-- submenu: obd_service.xml - Contains diagnostic functions -->
         </menu>
     </item>
-
 </menu>

@@ -58,6 +58,7 @@ public class EcuDataItem
 	private String mnemonic;     ///< unique textual mnemonic
 	public EcuDataPv pv;        ///< the process variable for displaying
 	private int currErrorCount = 0;     ///< current number of consecutive conversion errors
+	public long updatePeriod_ms = 0; ///< Minimum update period in ms
 
 	// Logger object
 	private static final Logger log = Logger.getLogger("data.ecu");
@@ -90,6 +91,7 @@ public class EcuDataItem
 	 * @param format formatting string for text representation
 	 * @param minValue minimum physical value to display/scale
 	 * @param maxValue maximum physical value to display/scale
+	 * @param minUpdatePeriod Minimum expected data update period in ms
 	 * @param labelText descriptive text label
 	 */
 	public EcuDataItem( int newPid,
@@ -102,6 +104,7 @@ public class EcuDataItem
 	                    String format,
 	                    Number minValue,
 	                    Number maxValue,
+						long minUpdatePeriod,
 	                    String labelText,
 						String _mnemonic)
 	{
@@ -113,11 +116,10 @@ public class EcuDataItem
 		bitMask = maskingBits;
 		cnv = conversions;
 		fmt = format;
+		updatePeriod_ms = minUpdatePeriod;
 		label = labelText;
 		mnemonic = _mnemonic;
 		pv = new EcuDataPv();
-		Number minVal = minValue;
-		Number maxVal = maxValue;
 
 		// initialize new PID with current data
 		pv.put(EcuDataPv.FID_PID, Integer.valueOf(pid));
@@ -132,13 +134,105 @@ public class EcuDataItem
 		pv.put(EcuDataPv.FID_VALUE, Float.valueOf(0));
 		pv.put(EcuDataPv.FID_FORMAT, fmt);
 		pv.put(EcuDataPv.FID_CNVID, cnv);
+		updateLimits(minValue, maxValue);
+	}
+
+	/**
+	 * Update MIN/MAX limit values
+	 *
+	 * - if values are specified, this sets the MIN/MAX limits to specified values
+	 * - if NOT specified the MIN/MAX range is calculated from the data range using the given conversion
+	 *
+	 * This update is required on:
+	 * - Initialisation
+	 * - Update of dynamic conversion factors
+	 *
+	 * @param minValue	Specific MIN value or NULL if not specified
+	 * @param maxValue	Specific MAX value or NULL if not specified
+	 */
+	protected void updateLimits(Number minValue, Number maxValue)
+	{
+		// set specified values
+		Number minVal = minValue;
+		Number maxVal = maxValue;
+		// Check conversion
 		if(cnv != null && cnv[cnvSystem] != null)
 		{
-			if(minVal == null) minVal = cnv[cnvSystem].memToPhys(0);
-			if(maxVal == null) maxVal = cnv[cnvSystem].memToPhys((1L<<numBits)-1);
+			// If MIN/MAX value un-specified. calculate from data range conversion
+			if(minVal == null) minVal = physMin();
+			if(maxVal == null) maxVal = physMax();
 		}
+		// Update limits ...
 		pv.put(EcuDataPv.FID_MIN, minVal);
 		pv.put(EcuDataPv.FID_MAX, maxVal);
+	}
+
+	/**
+	 * Return minimum raw (integer) value before conversion
+	 * - calculated based on bit width & mask
+	 *
+	 * @apiNote Just for completeness, This wil always return a 0
+	 *
+	 * @return MIM raw integer value
+	 */
+	public long rawMin()
+	{
+		return 0L;
+	}
+
+	/**
+	 * Return maximum raw (integer) value before conversion
+	 * - calculated based on bit width & mask
+	 *
+	 * @return MAX raw integer value
+	 */
+	public long rawMax()
+	{
+		return((((1L<<numBits)-1) & bitMask));
+	}
+
+	/**
+	 * Return physical value from raw (integer) value
+	 * @param rawVal RAW integer value
+	 * @return Physical value
+	 */
+	public Number physVal(long rawVal)
+	{
+		return( cnv[cnvSystem].memToPhys( rawVal ));
+	}
+
+	/**
+	 * Return raw (integer) value from physical value
+	 * - calculation based on conversion
+	 *
+	 * @param physVal physical value
+	 * @return raw integer value
+	 */
+	public long rawVal(Number physVal)
+	{
+		return cnv[cnvSystem].physToMem(physVal).longValue();
+	}
+
+	/**
+	 * Return physically minimum value
+	 * - Value is calculated from bit width and data conversion
+	 *
+	 * @return MIN value
+	 */
+	public Number physMin()
+	{
+		return physVal(rawMin());
+	}
+
+	/**
+	 * Return physically maximum value
+	 * - Value is calculated from bit width and data conversion
+	 *
+	 * @return MAX value
+	 */
+	public Number physMax()
+	{
+		return physVal(rawMax());
 	}
 
 	@Override
@@ -171,11 +265,14 @@ public class EcuDataItem
 				value = (value & bitMask);
 
 				// now run conversion to physical value on it ...
-				result = cnv[cnvSystem].memToPhys(value);
+				result = physVal(value);
 			}
 			else
 			{
-				result = String.copyValueOf(buffer, ofs, bytes);
+				// get number of padding \0 characters
+				int padChars = 0; while(buffer[ofs + padChars] == 0) padChars++;
+				// copy string content after padding characters ...
+				result = String.copyValueOf(buffer, ofs + padChars, bytes);
 			}
             // decrement error counter
             currErrorCount = Math.max(0, currErrorCount -1);
@@ -194,8 +291,10 @@ public class EcuDataItem
 	 * Update process var from Buffer value
 	 *
 	 * @param buffer communication buffer content
+	 * @return Next expected update period
 	 */
-	public void updatePvFomBuffer(char[] buffer)
+	@SuppressWarnings("DefaultLocale")
+	public long updatePvFomBuffer(char[] buffer)
 	{
 		// process data item
 		try
@@ -206,6 +305,7 @@ public class EcuDataItem
 			if(currErrorCount < MAX_ERROR_COUNT)
 			{
 				pv.put(EcuDataPv.FID_VALUE, result);
+				pv.put(EcuDataPv.FID_UNITS, pv.getUnits());
 				log.fine(String.format("%02X %-30s %16s %s",
 										pid,
 										label,
@@ -224,6 +324,9 @@ public class EcuDataItem
 		{
 			log.warning(ex.toString());
 		}
+
+		/* return next expected update period */
+		return updatePeriod_ms;
 	}
 
 	@Override

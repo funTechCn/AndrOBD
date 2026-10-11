@@ -20,30 +20,33 @@
 package com.fr3ts0n.ecu.gui.androbd;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.TwoLineListItem;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
@@ -51,7 +54,7 @@ import java.util.logging.Logger;
  *
  * @author mike wakerly (opensource@hoho.com)
  */
-public final class UsbDeviceListActivity extends Activity
+public final class UsbDeviceListActivity extends AppCompatActivity
 {
 	private static final String TAG = UsbDeviceListActivity.class.getSimpleName();
 	private static final Logger log = Logger.getLogger(TAG);
@@ -62,9 +65,9 @@ public final class UsbDeviceListActivity extends Activity
 	private UsbManager mUsbManager;
 	private static final int MESSAGE_REFRESH = 101;
 	private static final long REFRESH_TIMEOUT_MILLIS = 5000;
+	private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 
-	@SuppressLint("HandlerLeak")
-	private final Handler mHandler = new Handler()
+	private final Handler mHandler = new Handler(Looper.getMainLooper())
 	{
 		@Override
 		public void handleMessage(Message msg)
@@ -84,7 +87,9 @@ public final class UsbDeviceListActivity extends Activity
 	};
 
 	private final List<UsbSerialPort> mEntries = new ArrayList<>();
-	private ArrayAdapter<UsbSerialPort> mAdapter;
+	private UsbAdapter mAdapter;
+	private TextView mEmptyStateView;
+	private LinearProgressIndicator mScanProgress;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState)
@@ -93,70 +98,63 @@ public final class UsbDeviceListActivity extends Activity
 		setContentView(R.layout.usb_list);
 
 		mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-		ListView mListView = findViewById(R.id.deviceList);
-		mAdapter = new ArrayAdapter<UsbSerialPort>(this,
-		                                           android.R.layout.simple_expandable_list_item_2,
-		                                           mEntries)
-		{
-			@Override
-			public View getView(int position, View convertView, ViewGroup parent)
-			{
-				final TwoLineListItem row;
-				if (convertView == null)
-				{
-					final LayoutInflater inflater =
-						(LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-					row = (TwoLineListItem) (inflater != null ? inflater.inflate(
-						android.R.layout.simple_list_item_2, null) : null);
-				} else
-				{
-					row = (TwoLineListItem) convertView;
-				}
-
-				if (row != null)
-				{
-					final UsbSerialPort port = mEntries.get(position);
-					final UsbSerialDriver driver = port.getDriver();
-					final UsbDevice device = driver.getDevice();
-	
-					final String title = String.format("USB: 0x%04x/0x%04x",
-					                                   device.getVendorId(),
-					                                   device.getProductId());
-					final String subtitle = driver.getClass().getSimpleName();
-
-					row.getText1().setText(title);
-					row.getText2().setText(subtitle);
-				}
-				
-				//noinspection ConstantConditions
-				return row;
-			}
-
-		};
+		RecyclerView mListView = findViewById(R.id.deviceList);
+		mListView.setLayoutManager(new LinearLayoutManager(this));
+		mAdapter = new UsbAdapter();
 		mListView.setAdapter(mAdapter);
 
-		mListView.setOnItemClickListener(new ListView.OnItemClickListener()
-		{
-			@Override
-			public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-			{
-				log.fine("Pressed item " + position);
-				if (position >= mEntries.size())
-				{
-					log.warning("Illegal position.");
-					return;
-				}
+		mEmptyStateView = findViewById(R.id.empty_state);
+		mEmptyStateView.setText(R.string.no_usb_devices_found);
+		mScanProgress = findViewById(R.id.scan_progress);
+	}
 
-				selectedPort = mEntries.get(position);
+	private void onPortSelected(UsbSerialPort port) {
+		selectedPort = port;
 
-				// Create the result Intent and include the MAC address
-				Intent intent = new Intent();
-				// Set result and finish this Activity
-				setResult(Activity.RESULT_OK, intent);
-				log.fine("Sending Result...");
-				finish();
-			}
-		});
+		// Create the result Intent and include the MAC address
+		Intent intent = new Intent();
+		// Set result and finish this Activity
+		setResult(RESULT_OK, intent);
+		log.fine("Sending Result...");
+		finish();
+	}
+
+	private static class DeviceViewHolder extends RecyclerView.ViewHolder {
+		final TextView text;
+		DeviceViewHolder(@NonNull View itemView) {
+			super(itemView);
+			text = (TextView) itemView;
+		}
+	}
+
+	private class UsbAdapter extends RecyclerView.Adapter<DeviceViewHolder> {
+		@NonNull
+		@Override
+		public DeviceViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+			View v = LayoutInflater.from(parent.getContext())
+				.inflate(R.layout.device_name, parent, false);
+			return new DeviceViewHolder(v);
+		}
+
+		@Override
+		public void onBindViewHolder(@NonNull DeviceViewHolder holder, int position) {
+			final UsbSerialPort port = mEntries.get(position);
+			final UsbSerialDriver driver = port.getDriver();
+			final UsbDevice device = driver.getDevice();
+
+			final String title = String.format("USB: 0x%04x/0x%04x",
+			                                   device.getVendorId(),
+			                                   device.getProductId());
+			final String subtitle = driver.getClass().getSimpleName();
+
+			holder.text.setText(String.format("%s\n%s", title, subtitle));
+			holder.itemView.setOnClickListener(v -> onPortSelected(port));
+		}
+
+		@Override
+		public int getItemCount() {
+			return mEntries.size();
+		}
 	}
 
 	@Override
@@ -173,43 +171,36 @@ public final class UsbDeviceListActivity extends Activity
 		mHandler.removeMessages(MESSAGE_REFRESH);
 	}
 
-	@SuppressLint("StaticFieldLeak")
+	// The device list is small and rebuilt wholesale every poll (no drivers persist across a
+	// refresh), so a full notifyDataSetChanged is genuinely simplest here — not worth a DiffUtil
+	// for a handful of items on a 5-second timer.
+	@SuppressLint({"StringFormatInvalid", "NotifyDataSetChanged"})
 	private void refreshDeviceList()
 	{
-		new AsyncTask<Void, Void, List<UsbSerialPort>>()
-		{
-			@Override
-			protected List<UsbSerialPort> doInBackground(Void... params)
+		mScanProgress.setVisibility(View.VISIBLE);
+		mExecutor.submit(() -> {
+			log.fine("Refreshing device list ...");
+			final List<UsbSerialDriver> drivers =
+				UsbSerialProber.getDefaultProber().findAllDrivers(mUsbManager);
+			final List<UsbSerialPort> result = new ArrayList<>();
+			for (final UsbSerialDriver driver : drivers)
 			{
-				log.fine("Refreshing device list ...");
-				final List<UsbSerialDriver> drivers =
-					UsbSerialProber.getDefaultProber().findAllDrivers(mUsbManager);
-				final List<UsbSerialPort> result = new ArrayList<>();
-
-				for (final UsbSerialDriver driver : drivers)
-				{
-					final List<UsbSerialPort> ports = driver.getPorts();
-					log.fine(String.format("+ %s: %s selectedPort%s",
-					                         driver, ports.size(),
-					                         ports.size() == 1 ? "" : "s"));
-					result.addAll(ports);
-				}
-
-				return result;
+				final List<UsbSerialPort> ports = driver.getPorts();
+				log.fine(String.format("+ %s: %s selectedPort%s",
+				                       driver, ports.size(),
+				                       ports.size() == 1 ? "" : "s"));
+				result.addAll(ports);
 			}
-
-			@SuppressLint("StringFormatInvalid")
-			@Override
-			protected void onPostExecute(List<UsbSerialPort> result)
-			{
+			mHandler.post(() -> {
 				mEntries.clear();
 				mEntries.addAll(result);
 				TextView numFound = findViewById(R.id.num_found);
 				numFound.setText(getString(R.string.devices_found, result.size()));
 				mAdapter.notifyDataSetChanged();
+				mEmptyStateView.setVisibility(mEntries.isEmpty() ? View.VISIBLE : View.GONE);
+				mScanProgress.setVisibility(View.GONE);
 				log.fine("Done refreshing, " + mEntries.size() + " entries found.");
-			}
-
-		}.execute();
+			});
+		});
 	}
 }

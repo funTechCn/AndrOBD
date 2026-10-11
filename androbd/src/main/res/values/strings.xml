@@ -2,9 +2,10 @@
 <resources>
     <!--  AndrOBD -->
     <string name="app_name" translatable="false">AndrOBD</string>
-    <string name="copyright_fr3ts0n" translatable="false">© 2015-2018 fr3ts0n</string>
+    <string name="copyright_fr3ts0n" translatable="false">© 2015-2026 fr3ts0n</string>
     <string name="translation_credits">Translation by fr3ts0n</string>
     <string name="app_description">Android OBD vehicle diagnostics app for ELM327 Bluetooth adapter</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="title_connecting">Connecting…</string>
     <string name="title_connected_to">Connected %s</string>
     <string name="logo">Logo</string>
@@ -16,6 +17,7 @@
     <string name="obd_veh_info">OBD Vehicle Info</string>
     <string name="obd_data">OBD Data</string>
     <string name="service_freezeframes">OBD Freeze Frames</string>
+    <string name="service_testcontrol">OBD test control</string>
     <string name="obd_codes">OBD fault codes</string>
     <string name="obd_permanentcodes">OBD fault codes (permanent)</string>
     <string name="obd_pendingcodes">OBD fault codes (pending)</string>
@@ -36,9 +38,22 @@ information, including:\n
 Other manufacturer specific clearing/resetting actions may occur.\n
 The loss of data may cause the vehicle to run poorly for a short \n
 period of time while the ECU recalibrates itself.
-     </string>
+    </string>
+    <string name="obd_test_progress">OBD test control in progress.\n
+        Please check vehicle reaction.</string>
+    <string name="obd_test_confirm">OBD test control requested.\n\n
+        The requested OBD test control may generate:\n
+        - Vehicle motion\n
+        - Exhaust smoke\n
+        - High exhaust temperature\n
+        - Loud engine noise\n
+        - Fuel vapor\n
+        - etc.\n\n
+        Please confirm to perform this test control on your own risk in a safe test environment only!
+    </string>
     <!--  BtDeviceListActivity -->
     <string name="select_device">Select adapter</string>
+    <string name="select_ble_device">Select BLE adapter</string>
     <string name="none_paired">No Devices Paired</string>
     <string name="none_found">No Devices Found</string>
     <string name="title_paired_devices">Paired Devices</string>
@@ -53,6 +68,7 @@ period of time while the ECU recalibrates itself.
     <string name="save">Save measurement</string>
     <string name="load">Load measurement</string>
     <string name="saved_data">Saved Data</string>
+    <string name="no_obd_files_found">No OBD files found</string>
     <string name="loaded">loaded</string>
     <string name="saved">saved</string>
     <string name="connected_to">"Connected to "</string>
@@ -81,6 +97,10 @@ period of time while the ECU recalibrates itself.
     <string name="items_for_display_descr">Select all data items to be displayed …</string>
     <string-array name="empty" translatable="false"/>
     <string name="debugging">Debugging</string>
+    <string name="open_log_dir">Open log directory</string>
+    <string name="open_log_dir_description">Open the log folder in a file manager</string>
+    <string name="log_dir_not_found">Log directory not found — enable logging and restart the app first</string>
+    <string name="log_dir_no_app">No file manager found — path copied to clipboard</string>
     <string name="logging_level">Logging level</string>
     <string name="logging_level_description">Level of details to be logged into debug log file</string>
     <string-array name="logging_options" translatable="false">
@@ -93,6 +113,17 @@ period of time while the ECU recalibrates itself.
         <item>FINER</item>
         <item>FINEST</item>
         <item>ALL</item>
+    </string-array>
+    <string-array name="logging_options_display">
+        <item>OFF — no logging</item>
+        <item>SEVERE — errors only</item>
+        <item>WARNING — errors and warnings</item>
+        <item>INFO — standard diagnostic information</item>
+        <item>CONFIG — configuration messages</item>
+        <item>FINE — detailed debug (may affect performance)</item>
+        <item>FINER — more detailed debug</item>
+        <item>FINEST — maximum detail (may affect performance)</item>
+        <item>ALL — all messages</item>
     </string-array>
     <!--
     * key values for restore options
@@ -139,13 +170,26 @@ period of time while the ECU recalibrates itself.
     <string name="select_fault_code">Select fault code …</string>
     <string name="select_medium">Adapter type …</string>
     <string name="devices_found">%d USB device(s) found</string>
+    <string name="no_paired_devices">No paired devices found. Pair a device in Bluetooth settings first.</string>
+    <string name="no_ble_devices_found">No devices found nearby.</string>
+    <string name="no_usb_devices_found">No USB devices found.</string>
     <string name="min_elm_timeout">Min. ELM timeout [ms]</string>
     <string name="unabletoconnect">Unable to connect device</string>
     <string name="connectionlost">Device connection was lost</string>
     <string name="elm_timeout_descr">Minimum timeout in [ms] to wait for ELM responses</string>
     <string name="day_night_mode">Day/Night view mode</string>
-    <string name="night_mode_description">Set display to dark background</string>
-    <string name="night_mode">Night mode</string>
+    <string name="theme_mode">Theme</string>
+    <string name="theme_mode_description">Follow the system theme, or force light or dark</string>
+    <string-array name="theme_mode_entries">
+        <item>Follow system</item>
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+    <string-array name="theme_mode_values">
+        <item>system</item>
+        <item>light</item>
+        <item>dark</item>
+    </string-array>
     <string name="disable_elm_cmds">Disabled ELM commands</string>
     <string name="disable_elm_cmds_descr">enable/disable ELM commands</string>
     <string name="elm_adaptive_timing">ELM adaptive timing</string>
@@ -245,9 +289,13 @@ period of time while the ECU recalibrates itself.
         Charting library for Android\n
         * Apache 2.0 license
     </string>
+    <string name="lib_speedview" translatable="false">SpeedView</string>
+    <string name="lib_speedview_sum" translatable="false">
+        Beautiful gauges for Android\n
+        * Apache 2.0 license
+    </string>
     <string name="graphic_design">Graphic design</string>
     <string name="design_credits" translatable="false">2018 by @anaufalm</string>
-    <string name="plugin_data">Plugin data</string>
     <string name="long_press_dfc_hint">Long press DFC for online search …</string>
     <string-array name="csv_field_delim_options" translatable="false">
         <item>@string/tab</item>
@@ -269,9 +317,62 @@ period of time while the ECU recalibrates itself.
         <item>\n</item>
         <item>\r\n</item>
     </string-array>
-    <string name="process_vars">Process variables</string>
-    <string name="unfilter">Remove filter</string>
-    <string name="plugin_manager_desc">Manager for detected plugins</string>
-    <string name="graph_actions">Graph actions</string>
-    <string name="master">master</string>
+    <string name="comm_baudrate">ELM baud rate</string>
+    <string name="comm_baudrate_description">USB serial communication speed</string>
+    <string name="full_screen_display">Full screen display</string>
+    <string name="full_screen_display_description">Use full screen for app display</string>
+    <string name="display_color">Display color</string>
+    <string name="customize_display">Customize data display</string>
+    <string name="display_range">Display range</string>
+    <string name="reset_default">Default</string>
+    <string name="update_period_s">Update period [s]</string>
+    <string-array name="baud_rates" translatable="false">
+        <item>2400</item>
+        <item>9600</item>
+        <item>19200</item>
+        <item>38400</item>
+        <item>57600</item>
+        <item>115200</item>
+    </string-array>
+
+    <!-- Language selection -->
+    <string name="language_selection" translatable="false">Language / Язык / Lingua</string>
+    <string name="language_selection_description">Select application language</string>
+    <string name="language_system_default">System default</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_estonian" translatable="false">Eesti</string>
+    <string name="language_tamil" translatable="false">நாகர்</string>
+    <string name="language_portugal" translatable="false">Português</string>
+    <string name="language_russian" translatable="false">Русский</string>
+    <string name="language_italian" translatable="false">Italiano</string>
+    <string name="language_german" translatable="false">Deutsch</string>
+    <string name="language_french" translatable="false">Français</string>
+    <string name="language_spanish" translatable="false">Español</string>
+    <string name="restart_required">Restart required to apply language change</string>
+
+    <string-array name="language_options" translatable="false">
+        <item>@string/language_system_default</item>
+        <item>@string/language_english</item>
+        <item>@string/language_estonian</item>
+        <item>@string/language_tamil</item>
+        <item>@string/language_portugal</item>
+        <item>@string/language_russian</item>
+        <item>@string/language_italian</item>
+        <item>@string/language_german</item>
+        <item>@string/language_french</item>
+        <item>@string/language_spanish</item>
+    </string-array>
+
+    <string-array name="language_values" translatable="false">
+        <item>system</item>
+        <item>en</item>
+        <item>et</item>
+        <item>ta</item>
+        <item>pt</item>
+        <item>ru</item>
+        <item>it</item>
+        <item>de</item>
+        <item>fr</item>
+        <item>es</item>
+    </string-array>
 </resources>

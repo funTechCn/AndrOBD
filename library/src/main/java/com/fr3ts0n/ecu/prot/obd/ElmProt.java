@@ -79,7 +79,7 @@ public class ElmProt
 	/**
 	 * list of identified ECU addresses
 	 */
-	private final TreeSet<Integer> ecuAddresses = new TreeSet<Integer>();
+	final TreeSet<Integer> ecuAddresses = new TreeSet<Integer>();
 	/**
 	 * selected ECU address
 	 */
@@ -88,7 +88,11 @@ public class ElmProt
 	 * custom ELM initialisation commands
 	 */
 	private final Vector<String> customInitCommands = new Vector<String>();
-	
+	/**
+	 * last detected message counter ID
+	 */
+	private int lastMsgId = 0;
+
 	/**
 	 * ELM protocol ID's
 	 */
@@ -512,7 +516,21 @@ public class ElmProt
 		// return command String
 		return cmd;
 	}
-	
+
+	/**
+	 * Send telegram form command queue
+	 */
+	private void sendQueuedTelegram()
+	{
+		if(!cmdStack.isEmpty())
+		{
+			// get last cmd stack element
+			String cmd = cmdStack.pop();
+			// send the telegram
+			sendTelegram(cmd.toCharArray());
+		}
+	}
+
 	/**
 	 * send command to ELM adapter
 	 *
@@ -521,13 +539,13 @@ public class ElmProt
 	 */
 	public void sendCommand(CMD cmdID, int param)
 	{
+		pushCommand(cmdID, param);
 		// now send command
-		String cmd = createCommand(cmdID, param);
-		if (cmd != null) { sendTelegram(cmd.toCharArray()); }
+		sendQueuedTelegram();
 	}
-	
+
 	/**
-	 * queue command to ELM command queue
+	 * queue command to ELM command stack
 	 *
 	 * @param cmdID ID of ELM command
 	 * @param param parameter for ELM command (0 if not required)
@@ -535,7 +553,16 @@ public class ElmProt
 	private void pushCommand(CMD cmdID, int param)
 	{
 		String cmd = createCommand(cmdID, param);
-		if (cmd != null) { cmdQueue.add(cmd); }
+		pushTelegram(cmd);
+	}
+
+	/**
+	 * queue generic telegram buffer to command stack
+	 * @param tgm telegram buffer
+	 */
+	private void pushTelegram(String tgm)
+	{
+		if (tgm != null && !tgm.isEmpty()) { cmdStack.push(tgm); }
 	}
 	
 	@Override
@@ -604,18 +631,17 @@ public class ElmProt
 		// remember to disable headers again
 		pushCommand(CMD.SETHEADER, 0);
 		// request PIDs (from all devices)
-		cmdQueue.add("0100");
+		pushTelegram("0100");
 		// enable headers
-		sendCommand(CMD.SETHEADER, 1);
+		pushCommand(CMD.SETHEADER, 1);
+		// trigger sending of queued telegrams
+		sendQueuedTelegram();
 	}
 	
 	private void initialize()
 	{
 		// set status to INITIALIZING
 		setStatus(STAT.INITIALIZING);
-		
-		// push custom init commands
-		cmdQueue.addAll(customInitCommands);
 		
 		// set to preferred protocol
 		pushCommand(CMD.SETPROT, preferredProtocol.ordinal());
@@ -639,7 +665,68 @@ public class ElmProt
 	 * multiline response is pending, for responses w/o a length info
 	 */
 	private boolean responsePending = false;
-	
+
+	/**
+	 * Get buffer as byte array from HEX string
+	 *
+	 * Parses each hex digit pair independently rather than via
+	 * {@code new BigInteger(str, 16).toByteArray()}: BigInteger's
+	 * two's-complement byte array silently drops leading zero bytes and
+	 * silently prepends an extra 0x00 sign byte whenever the first hex pair's
+	 * high bit is set, so its length does not reliably match {@code
+	 * buffer.length / 2}. That misalignment previously threw off every index
+	 * into the result in {@link #isValidIsoTelegram}.
+	 *
+	 * @param buffer hex string char buffer
+	 * @return byte[] of buffer content, one byte per hex digit pair
+	 */
+	private byte[] fromHex(char[] buffer)
+	{
+		int len = buffer.length / 2;
+		byte[] result = new byte[len];
+		for (int i = 0; i < len; i++)
+		{
+			result[i] = (byte) Integer.parseInt(new String(buffer, i * 2, 2), 16);
+		}
+		return result;
+	}
+
+	/**
+	 * Check if buffer contains a valid ISO telegram
+	 * @param buffer Telegram buffer
+	 * @return true if buffer contains valid ISO telegram, false otherwise
+	 */
+	private boolean isValidIsoTelegram(char[] buffer)
+	{
+		boolean result = false;
+		// ISO Header=3bytes, footer=1byte > min 8 hex digits
+		if(buffer.length > 8)
+		{
+			try {
+				int i;
+				int crc=0;
+				byte[] binBuff = fromHex(buffer);
+				for (i=0; i<binBuff.length-1; i++)
+				{
+					// treat each byte as unsigned - checksum is mod 256
+					crc += binBuff[i] & 0xFF;
+				}
+				// check last byte matching accumulated CRC (both unsigned)
+				result = ((crc & 0xFF) == (binBuff[i] & 0xFF));
+			} catch (Exception e) {
+				// Ignore exception - result=false
+			}
+		}
+		return result;
+	}
+
+	private String extractIsoContent(char[] buffer)
+	{
+		/* Extract payload content out of ISO telegram
+		 * ISO Tgm.: <TYPE><SENDER><DESTINATION><PayLoad...><CRC> */
+		return String.copyValueOf(buffer,6,buffer.length-8);
+	}
+
 	/**
 	 * handle incoming protocol telegram
 	 *
@@ -651,9 +738,8 @@ public class ElmProt
 	{
 		int result = 0;
 		String bufferStr = new String(buffer);
-		
 		log.fine(this.toString() + " RX:'" + bufferStr + "'");
-		
+
 		// empty result
 		if (buffer.length == 0)
 		{
@@ -692,12 +778,18 @@ public class ElmProt
 			case DATAERROR:
 			case BUFFERFULL:
 			case RXERROR:
-			case STOPPED:
 				// remember this as last received message
 				// do NOT respond immediately
 				lastRxMsg = bufferStr;
 				break;
-			
+
+			case STOPPED:
+				// remember this as last received message
+				lastRxMsg = bufferStr;
+				// re-queue last command
+				pushTelegram(String.valueOf(lastCommand));
+				break;
+
 			case MODEL:
 				initialize();
 				break;
@@ -718,7 +810,7 @@ public class ElmProt
 					case FBERROR:
 						setStatus(STAT.DISCONNECTED);
 						// re-queue last command
-						cmdQueue.add(String.valueOf(lastCommand));
+						pushTelegram(String.valueOf(lastCommand));
 						// queue setting to preferred protocol
 						pushCommand(CMD.SETPROT, preferredProtocol.ordinal());
 						// Initialize adaptive timing
@@ -742,13 +834,13 @@ public class ElmProt
 						setStatus(STAT.ERROR);
 						sendCommand(CMD.WARMSTART, 0);
 						break;
-					
+
 					case NODATA:
 						setStatus(STAT.NODATA);
 						// re-queue next data item
 						if (service != OBD_SVC_NONE)
 						{
-							cmdQueue.add(
+							pushTelegram(
 								String.valueOf(
 									createTelegram(emptyBuffer, service, getNextSupportedPid()))
 							);
@@ -775,14 +867,9 @@ public class ElmProt
 						}
 						
 						// queued commands will be sent first
-						if (cmdQueue.size() > 0)
+						if (!cmdStack.isEmpty())
 						{
-							// get last command
-							String cmd = cmdQueue.lastElement();
-							// and remove it from list
-							cmdQueue.remove(cmd);
-							// send the command
-							sendTelegram(cmd.toCharArray());
+							sendQueuedTelegram();
 						}
 						else
 						{
@@ -791,6 +878,8 @@ public class ElmProt
 							{
 								// set status to initialized
 								setStatus(STAT.INITIALIZED);
+								// push custom init commands
+								cmdStack.addAll(customInitCommands);
 								// initiate query of connected ECUs
 								queryEcus();
 								break;
@@ -836,7 +925,14 @@ public class ElmProt
 					{
 						// start of 0100 response is end of address
 						int adrEnd = bufferStr.indexOf("41");
+						// if not a service response, check for possible NRC
+						if(adrEnd < 0)
+						{
+							adrEnd = bufferStr.indexOf("7F01");
+						}
 						int adrStart = bufferStr.lastIndexOf(".") + 1;
+						int dataEnd = bufferStr.length();
+
 						if (adrEnd > adrStart)
 						{
 							int adrLen = adrEnd - adrStart;
@@ -860,6 +956,8 @@ public class ElmProt
 									 */
 									adrLen = 2;
 									adrStart = adrEnd - adrLen;
+									// subtract ISO checksum from payload
+									dataEnd -= 2;
 								}
 								else if (adrLen == 10)
 								{
@@ -881,16 +979,20 @@ public class ElmProt
 							log.fine(String.format("Found ECU address: 0x%s", address));
 							// and add to list of addresses
 							ecuAddresses.add(Integer.valueOf(address, 16));
+							// extract / process payload data
+							bufferStr = bufferStr.substring(adrEnd, dataEnd);
 						}
-						return lastRxMsg.length();
+						return handleDataMessage(bufferStr);
 					}
-					default:
-						break;
 				}
 				
 				// we are connected ...
 				setStatus(STAT.CONNECTED);
-				
+
+				if( isValidIsoTelegram(buffer) )
+					// extract ISO content
+					bufferStr = extractIsoContent(buffer);
+
 				// ELM clone verbose message (starting with '+')
 				if(buffer[0] == '+')
 				{
@@ -907,15 +1009,51 @@ public class ElmProt
 					return (result);
 				}
 				
-				// is this a multy-line response
+				// is this a multi-line response
 				int idx = bufferStr.indexOf(':');
+
+				// .. or a ISO multi line response with format SVC PID MSGID DATA...
+				if((idx < 0) && (buffer.length == 14))
+				{
+					final int[] dfcServices = {OBD_SVC_READ_CODES, OBD_SVC_PENDINGCODES, OBD_SVC_PERMACODES};
+					int msgService = Integer.valueOf(bufferStr.substring(0, 2), 0x10) & ~0x40;
+					// If response to current service and no DFC response ...
+					if(msgService == getService()
+					   && Arrays.binarySearch(dfcServices, msgService) < 0)
+					{
+						// Use header on 1st response, cut from continuation messages
+						int msgId = Integer.valueOf(bufferStr.substring(4,6),0x10);
+						if(msgId <= 1)
+						{
+							// 1st response line
+							idx = 0;
+							lastMsgId = msgId;
+						}
+						else if (msgId == (lastMsgId + 1))
+						{
+							// continuation line
+							idx = 5;
+							lastMsgId = msgId;
+						}
+						else
+						{
+							// NOT a ISO multi line message
+							idx = -1;
+							// cut additional (padding) byte
+							bufferStr = bufferStr.substring(0,buffer.length-2);
+						}
+					}
+				}
+
 				if (idx >= 0)
 				{
-					/* no length known, set marker for pending response
-					   response will be finished on reception of prompt */
-					responsePending = (charsExpected == 0);
-					
-					if (buffer[0] == '0')
+					if(idx == 0)
+					{
+						// initial ISO multiline message
+						lastRxMsg = bufferStr;
+						charsExpected = 0;
+					}
+					else if (buffer[0] == '0')
 					{
 						// first line of a multiline message
 						lastRxMsg = bufferStr.substring(idx + 1);
@@ -926,6 +1064,10 @@ public class ElmProt
 						// concat response without line counter
 						lastRxMsg += bufferStr.substring(idx + 1);
 					}
+
+					/* no length known, set marker for pending response
+					   response will be finished on reception of prompt */
+					responsePending = (charsExpected == 0);
 				}
 				else
 				{
@@ -970,10 +1112,6 @@ public class ElmProt
 		// otherwise process response
 		switch (service)
 		{
-			case OBD_SVC_NONE:
-				// ignore messages
-				break;
-			
 			case OBD_SVC_CAN_MONITOR:
 				result = canProt.handleTelegram(lastRxMsg.toCharArray());
 				break;
@@ -1013,7 +1151,7 @@ public class ElmProt
 				handleTelegram("...486B104100BF9FA8919B".toCharArray());
 				handleTelegram("7E8064100000000".toCharArray());
 				handleTelegram("7E9074100000000".toCharArray());
-				handleTelegram("7E9074100000000".toCharArray());
+				handleTelegram("7EA074100000000".toCharArray());
 				// test case for issue AndrOBD/#60
 				handleTelegram("18DAF110064100BE3EB811".toCharArray());
 				setStatus(STAT.ECU_DETECTED);
@@ -1024,37 +1162,28 @@ public class ElmProt
 					{
 						// read any kinds of trouble codes
 						case OBD_SVC_READ_CODES:
+						case OBD_SVC_PENDINGCODES:
+						case OBD_SVC_PERMACODES:
 							// simulate 12 TCs set as multy line response
+							// number of codes = 12 + MIL ON
+							handleTelegram("41018C000000".toCharArray());
 							// send codes as multy line response
 							handleTelegram("014".toCharArray());
 							handleTelegram("0:438920B920BD".toCharArray());
 							handleTelegram("1:C002242A246E02".toCharArray());
 							handleTelegram("2:36010101162453".toCharArray());
-							// number of codes = 12 + MIL ON
-							handleTelegram("41018C000000".toCharArray());
-							Thread.sleep(500);
-							break;
-						
-						case OBD_SVC_PENDINGCODES:
+
 							// simulate 12 TCs set as subsequent single line responses
 							// send codes as subsequent single line responses
-							handleTelegram("470920B920BD".toCharArray());
-							handleTelegram("4709C002242A246E".toCharArray());
-							handleTelegram("4709023601010116".toCharArray());
-							handleTelegram("4709245300000000".toCharArray());
-							// number of codes = 12 + MIL OFF
-							handleTelegram("41010C000000".toCharArray());
-							Thread.sleep(500);
-							break;
-						
-						case OBD_SVC_PERMACODES:
+							handleTelegram("478420BA20BC".toCharArray());
+							handleTelegram("4784C004242B".toCharArray());
+
 							// test pattern from AndrOBD/#78
 							// 4 DFCs, 10 byte multiline response , padded
 							handleTelegram("00A".toCharArray());
-							handleTelegram("0:4A0401180122".toCharArray());
+							handleTelegram("0:4A8401180122".toCharArray());
 							handleTelegram("1:02232610000000".toCharArray());
-							// number of codes = 4 + MIL OFF
-							handleTelegram("410104000000".toCharArray());
+
 							Thread.sleep(500);
 							break;
 						
@@ -1116,6 +1245,10 @@ public class ElmProt
 							handleTelegram("490601234567".toCharArray());
 							break;
 						
+						case OBD_SVC_CTRL_MODE:
+							handleTelegram("4800C0000000".toCharArray());
+							break;
+
 						case OBD_SVC_NONE:
 							// just keep quiet until soneone requests something
 							break;
@@ -1195,7 +1328,7 @@ public class ElmProt
 	/**
 	 * Holds value of property status.
 	 */
-	private STAT status;
+	private STAT status = STAT.UNDEFINED;
 	
 	/**
 	 * Getter for property status.
@@ -1212,7 +1345,7 @@ public class ElmProt
 	 *
 	 * @param status New value of property status.
 	 */
-	private void setStatus(STAT status)
+    void setStatus(STAT status)
 	{
 		STAT oldStatus = this.status;
 		this.status = status;

@@ -18,8 +18,7 @@
 
 package com.fr3ts0n.ecu.gui.androbd;
 
-import android.app.ActionBar;
-import android.app.Activity;
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.Paint.Align;
 import android.os.Bundle;
@@ -30,7 +29,11 @@ import android.os.PowerManager.WakeLock;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ListAdapter;
+
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.fr3ts0n.ecu.EcuDataPv;
 import com.fr3ts0n.ecu.prot.obd.ObdProt;
@@ -54,13 +57,8 @@ import java.util.TreeSet;
  * passes in the number of the <code>Sensor</code>(s) to display. If none is
  * passed, the first available <code>Sensor</code> is used.
  */
-public class ChartActivity extends Activity
+public class ChartActivity extends AppCompatActivity
 {
-
-	/**
-	 * minimum time between screen updates
-	 */
-	public static final long MIN_UPDATE_TIME = 1000;
 
 	/**
 	 * For passing the index number of the <code>Sensor</code> in its
@@ -68,33 +66,13 @@ public class ChartActivity extends Activity
 	 */
 	public static final String POSITIONS = "POSITIONS";
 
-	/** Map to uniquely collect PID numbers */
-	private final TreeSet<Integer> pidNumbers = new TreeSet<>();
-
 	/**
-	 * List of colors to be used for series
+	 * For passing if to do live data updates
 	 */
-	private static final int[] colors =
-		{
-			Color.LTGRAY,
-			Color.DKGRAY,
-			Color.RED,
-			Color.BLUE,
-			Color.GREEN,
-			Color.GRAY,
-			Color.CYAN,
-			Color.parseColor("#FF000080"), // navy
-			Color.YELLOW,
-			Color.parseColor("#FF00FFFF"), // aqua
-			Color.parseColor("#FFFF00FF"), // fuchsia
-			Color.parseColor("#FF800000"), // maroon
-			Color.parseColor("#FF00FF00"), // lime
-			Color.MAGENTA,
-			Color.parseColor("#FF808000"), // olive
-			Color.parseColor("#FF800080"), // purple
-			Color.parseColor("#FFC0C0C0"), // silver
-			Color.parseColor("#FF008080"), // teal
-		};
+	public static final String LIVE_UPDATE = "LIVE_UPDATE";
+
+    /** Map to uniquely collect PID numbers */
+	private final TreeSet<Integer> pidNumbers = new TreeSet<>();
 
 	/**
 	 * list of colors to be used for series
@@ -126,7 +104,10 @@ public class ChartActivity extends Activity
 	/**
 	 * the wake lock to keep app communication alive
 	 */
-	private static WakeLock wakeLock;
+	private WakeLock wakeLock;
+
+	/** do live updates? */
+	private boolean doLiveUpdates = false;
 
 	private static ListAdapter mAdapter = null;
 
@@ -142,17 +123,6 @@ public class ChartActivity extends Activity
 	}
 
 	/**
-	 * get color for an ID number preferrably unique pid number
-	 * this is to get persistent coloring/lining for each id
-	 * @param id id to get color for
-	 * @return color for given ID
-	 */
-	public static int getItemColor(int id)
-	{
-		return colors[id % colors.length];
-	}
-
-	/**
 	 * get stroke for an ID number preferrably unique pid number
 	 * this is to get persistent coloring/lining for each id
 	 * @param id id to get color for
@@ -160,7 +130,7 @@ public class ChartActivity extends Activity
 	 */
 	private static BasicStroke getStroke(int id)
 	{
-		return stroke[(id / colors.length) % stroke.length];
+		return stroke[(id / ColorAdapter.colors.length) % stroke.length];
 	}
 
 	@Override
@@ -173,6 +143,9 @@ public class ChartActivity extends Activity
 	@Override
 	public void onCreate(Bundle savedInstanceState)
 	{
+		// Apply locale before anything else
+		SettingsActivity.applyLocale(this);
+
 		super.onCreate(savedInstanceState);
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 		                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -190,7 +163,7 @@ public class ChartActivity extends Activity
 		wakeLock.acquire();
 
 		// set up action bar
-		ActionBar actionBar = getActionBar();
+		ActionBar actionBar = getSupportActionBar();
 		if (actionBar != null)
 		{
 			actionBar.setDisplayShowTitleEnabled(true);
@@ -198,14 +171,20 @@ public class ChartActivity extends Activity
 
 		setTitle(R.string.chart);
 
+		/*
+		 * get intent parameters
+		 */
+		doLiveUpdates = getIntent().getBooleanExtra(LIVE_UPDATE,false);
 		/* get PIDs to be shown */
-		int positions[] = getIntent().getIntArrayExtra(POSITIONS);
+		int[] positions = getIntent().getIntArrayExtra(POSITIONS);
 
 		// set up overall chart properties
 		sensorData = new XYMultipleSeriesDataset();
 		renderer = new XYMultipleSeriesRenderer(positions.length);
 		chartView = ChartFactory.getTimeChartView(this, sensorData, renderer, "H:mm:ss");
 		// set up global renderer
+		float textSize = new EditText(this).getTextSize();
+		renderer.setLabelsTextSize(textSize/2);
 		renderer.setXTitle(getString(R.string.time));
 		renderer.setXLabels(5);
 		renderer.setYLabels(5);
@@ -223,12 +202,12 @@ public class ChartActivity extends Activity
 		if(MainActivity.prefs.getBoolean(MainActivity.PREF_AUTOHIDE,false))
 		{
 			// get autohide timeout [s]
-			int timeout = Integer.valueOf(
+			int timeout = Integer.parseInt(
 				MainActivity.prefs.getString(MainActivity.PREF_AUTOHIDE_DELAY,"15") );
 			// auto hide toolbar
 			toolBarHider = new AutoHider( this,
 			                              mHandler,
-				timeout * 1000);
+			                              timeout * 1000L);
 			toolBarHider.start(1000);
 			// wake up on touch
 			chartView.setOnTouchListener(toolBarHider);
@@ -238,35 +217,39 @@ public class ChartActivity extends Activity
 	/**
 	 * Handle message requests
 	 */
-	private transient final Handler mHandler = new Handler()
+	@SuppressLint("HandlerLeak")
+    private transient final Handler mHandler = new Handler()
 	{
 		@Override
 		public void handleMessage(Message msg)
 		{
 
-			switch (msg.what)
-			{
-				case MainActivity.MESSAGE_UPDATE_VIEW:
-					/* update chart */
-					chartView.invalidate();
-					break;
-
-				// set toolbar visibility
-				case MainActivity.MESSAGE_TOOLBAR_VISIBLE:
-					Boolean visible = (Boolean)msg.obj;
-					// set action bar visibility
-					ActionBar ab = getActionBar();
-					if(ab != null)
+			if (msg.what == MainActivity.MESSAGE_UPDATE_VIEW) {
+				// Carry-forward: if a series hasn't received a new value for more than
+				// 1.5 s, add a duplicate point at the current time so the flat line
+				// extends to the right rather than being absent (issue #180).
+				long now = System.currentTimeMillis();
+				for (org.achartengine.model.XYSeries series : sensorData.getSeries())
+				{
+					int count = series.getItemCount();
+					if (count > 0 && now - (long) series.getX(count - 1) > 1500)
 					{
-						if(visible)
-						{
-							ab.show();
-						} else
-						{
-							ab.hide();
-						}
+						series.add(now, series.getY(count - 1));
 					}
-					break;
+				}
+				/* update chart */
+				chartView.invalidate();
+			} else if (msg.what == MainActivity.MESSAGE_TOOLBAR_VISIBLE) {
+				Boolean visible = (Boolean) msg.obj;
+				// set action bar visibility
+				ActionBar ab = getSupportActionBar();
+				if (ab != null) {
+					if (visible) {
+						ab.show();
+					} else {
+						ab.hide();
+					}
+				}
 			}
 		}
 	};
@@ -280,15 +263,9 @@ public class ChartActivity extends Activity
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
-		switch (item.getItemId())
-		{
-			case R.id.share:
-				new ExportTask(this).execute(sensorData);
-				break;
-
-			case R.id.snapshot:
-				Screenshot.takeScreenShot(this, getWindow().peekDecorView());
-				break;
+		int itemId = item.getItemId();
+		if (itemId == R.id.share) {
+			new ExportTask(this).execute(sensorData);
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -339,7 +316,9 @@ public class ChartActivity extends Activity
 		// start display update task
 		try
 		{
-			refreshTimer.schedule(updateTask, 0, 1000);
+			if(doLiveUpdates) {
+				refreshTimer.schedule(updateTask, 0, 1000);
+			}
 		} catch (Exception e)
 		{
 			// exception ignored here ...
@@ -380,6 +359,9 @@ public class ChartActivity extends Activity
 			// add PID to unique list of PIDs
 			pidNumbers.add(pid);
 
+			// Get display color ...
+			int pidColor = ColorAdapter.getItemColor(currPv);
+
 			// get contained data series
 			currSeries = (XYSeries) currPv.get(ObdItemAdapter.FID_DATA_SERIES);
 			if (currSeries == null) continue;
@@ -396,10 +378,10 @@ public class ChartActivity extends Activity
 			renderer.setYTitle(String.valueOf(currPv.get(EcuDataPv.FID_UNITS)), i);
 			renderer.setYAxisAlign(((i % 2) == 0) ? Align.LEFT : Align.RIGHT, i);
 			renderer.setYLabelsAlign(((i % 2) == 0) ? Align.LEFT : Align.RIGHT, i);
-			renderer.setYLabelsColor(i, getItemColor(pid!=0?pid:position));
+			renderer.setYLabelsColor(i, pidColor);
 			/* set up new line renderer */
 			XYSeriesRenderer r = new XYSeriesRenderer();
-			r.setColor(getItemColor(pid!=0?pid:position));
+			r.setColor(pidColor);
 			r.setStroke(getStroke(pid!=0?pid:position));
 			// register line renderer
 			renderer.addSeriesRenderer(i, r);

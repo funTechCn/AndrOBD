@@ -20,16 +20,33 @@
 package com.fr3ts0n.ecu.gui.androbd;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
-import android.preference.EditTextPreference;
-import android.preference.ListPreference;
-import android.preference.MultiSelectListPreference;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
+import android.view.View;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.preference.EditTextPreference;
+import androidx.preference.ListPreference;
+import androidx.preference.MultiSelectListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
+import androidx.preference.PreferenceScreen;
+
+import java.util.Locale;
 
 import com.fr3ts0n.ecu.EcuDataItem;
 import com.fr3ts0n.ecu.prot.obd.ElmProt;
@@ -40,80 +57,144 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SettingsActivity
-	extends Activity
+public class SettingsActivity extends AppCompatActivity
+	implements PreferenceFragmentCompat.OnPreferenceStartScreenCallback
 {
-	/** The logger object */
-	private static final Logger log = Logger.getLogger(SettingsActivity.class.getName());
-	
-	/**
-	 * app preferences
-	 */
-	private static SharedPreferences prefs;
-	/**
-	 * preference keys for extension files
-	 */
+	// Preference keys referenced from outside this class (MainActivity, ObdItemAdapter) -
+	// kept at this level, unlike the Settings-internal-only keys below, so those external
+	// call sites don't need to change.
 	static final String[] extKeys =
 	{
 		"ext_file_conversions",
 		"ext_file_dataitems"
 	};
-
-	/**
-	 * key ids for device network settings
-	 */
-	private static final String[] networkKeys =
-	{
-		"device_address",
-		"device_port"
-	};
-	/**
-	 * key ids for device network settings
-	 */
-	private static final String[] bluetoothKeys =
-	{
-		"bt_secure_connection"
-	};
-
-	// Preference key for data items
 	static final String KEY_DATA_ITEMS = "data_items";
 	static final String KEY_PROT_SELECT = "protocol";
 	static final String KEY_COMM_MEDIUM = "comm_medium";
 	static final String ELM_MIN_TIMEOUT = "elm_min_timeout";
 	static final String ELM_CMD_DISABLE = "elm_cmd_disable";
-    static final String ELM_TIMING_SELECT = "adaptive_timing_mode";
-    private static final String KEY_BITCOIN = "bitcoin";
+	private static final String KEY_APP_LANGUAGE = "app_language";
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Apply locale based on user preference
 	 *
-	 * @see android.preference.PreferenceActivity#onCreate(android.os.Bundle)
+	 * @param activity Activity context
 	 */
+	public static void applyLocale(Activity activity)
+	{
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+		String language = prefs.getString(KEY_APP_LANGUAGE, "system");
+		Locale locale;
+		if ("system".equals(language)) {
+			locale = Resources.getSystem().getConfiguration().locale;
+		} else {
+			locale = new Locale(language);
+		}
+		Locale.setDefault(locale);
+
+		Resources resources = activity.getResources();
+		Configuration config = resources.getConfiguration();
+		config.setLocale(locale);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+			activity.createConfigurationContext(config);
+		}
+		resources.updateConfiguration(config, resources.getDisplayMetrics());
+	}
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
+		// Apply locale before calling super.onCreate()
+		applyLocale(this);
 		super.onCreate(savedInstanceState);
-		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-		// Display the fragment as the main content.
-		getFragmentManager().beginTransaction().replace(android.R.id.content,
-		                                                new PrefsFragment()).commit();
+		if (savedInstanceState == null)
+		{
+			getSupportFragmentManager()
+				.beginTransaction()
+				.replace(android.R.id.content, new SettingsFragment())
+				.commit();
+		}
 	}
 
-	public static class PrefsFragment
-		extends PreferenceFragment
-		implements Preference.OnPreferenceClickListener,
-		SharedPreferences.OnSharedPreferenceChangeListener
+	/**
+	 * Called when the user taps a nested {@code PreferenceScreen} (e.g. "OBD Options",
+	 * "CSV Export Options"). AndroidX Preference does not navigate to sub-screens on its
+	 * own - the hosting activity has to swap in a new {@link SettingsFragment} rooted at
+	 * the tapped screen's key, or the tap silently does nothing.
+	 */
+	@Override
+	public boolean onPreferenceStartScreen(PreferenceFragmentCompat caller, PreferenceScreen pref)
 	{
+		SettingsFragment fragment = new SettingsFragment();
+		Bundle args = new Bundle();
+		args.putString(PreferenceFragmentCompat.ARG_PREFERENCE_ROOT, pref.getKey());
+		fragment.setArguments(args);
+
+		getSupportFragmentManager()
+			.beginTransaction()
+			.replace(android.R.id.content, fragment)
+			.addToBackStack(pref.getKey())
+			.commit();
+		return true;
+	}
+
+	/**
+	 * The actual preference screen - AndroidX preference dialogs/screens are hosted in a
+	 * fragment rather than directly in an Activity, unlike the old {@code PreferenceActivity}
+	 * API this was originally written against.
+	 */
+	public static class SettingsFragment
+		extends
+			PreferenceFragmentCompat
+		implements
+			SharedPreferences.OnSharedPreferenceChangeListener,
+			Preference.OnPreferenceClickListener
+	{
+		/** The logger object */
+		private static final Logger log = Logger.getLogger(SettingsFragment.class.getName());
+
+		/**
+		 * app preferences
+		 */
+		private SharedPreferences prefs;
+
+		/**
+		 * key ids for device network settings
+		 */
+		private static final String[] networkKeys =
+		{
+			"device_address",
+			"device_port"
+		};
+		/**
+		 * key ids for device network settings
+		 */
+		private static final String[] bluetoothKeys =
+		{
+			"bt_secure_connection"
+		};
+		/**
+		 * key ids for device network settings
+		 */
+		private static final String[] usbKeys =
+		{
+				"comm_baudrate"
+		};
+
+		static final String ELM_TIMING_SELECT = "adaptive_timing_mode";
+		private static final String KEY_BITCOIN = "bitcoin";
+		private static final String KEY_OPEN_LOG_DIR = "open_log_dir";
+
 		Vector<EcuDataItem> items;
 
 		@Override
-		public void onCreate(Bundle savedInstanceState)
+		public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey)
 		{
-			super.onCreate(savedInstanceState);
+			prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-			// Load the preferences from an XML resource
-			addPreferencesFromResource(R.xml.settings);
+			setPreferencesFromResource(R.xml.settings, rootKey);
 
 			for (String key : extKeys)
 			{
@@ -126,15 +207,120 @@ public class SettingsActivity
 			setupProtoSelection();
 			// set up ELM command selection
 			setupElmCmdSelection();
-            // set up ELM adaptive timing mode selection
-            setupElmTimingSelection();
+			// set up ELM adaptive timing mode selection
+			setupElmTimingSelection();
 			// set up selectable PID list
 			setupPidSelection();
 			// update network selection fields
 			updateNetworkSelections();
-			findPreference(KEY_BITCOIN).setOnPreferenceClickListener(this);
+			setPrefClickListener(KEY_BITCOIN);
+			setPrefClickListener(KEY_OPEN_LOG_DIR);
+		}
+
+		/**
+		 * Each time a nested PreferenceScreen is entered or backed out of, this fragment's
+		 * view is destroyed and a new one created (FragmentTransaction.replace()). Something
+		 * in the framework/AppCompat already positions list_container correctly below the
+		 * status bar and action bar for a freshly created fragment - but that mechanism
+		 * doesn't reliably re-run for every (re)created instance, occasionally leaving
+		 * list_container at y=0, rendered under the status bar and action bar. Only patch
+		 * it when that's actually happened (current position is at/near the top) - the
+		 * expected offset is already correct far more often than not, and blindly adding
+		 * padding regardless would double it up on top of whatever positioned it correctly
+		 * in the first place. Posted rather than applied inline, both so the view has a
+		 * real on-screen position to check yet, and so the action bar has its final
+		 * measured height.
+		 */
+		@Override
+		public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
+		{
+			super.onViewCreated(view, savedInstanceState);
+			view.post(() -> fixUnpaddedListContainer(view));
+		}
+
+		private void fixUnpaddedListContainer(@NonNull View fragmentView)
+		{
+			View listContainer = fragmentView.findViewById(android.R.id.list_container);
+			if (listContainer == null) return;
+
+			int statusBarHeight = 0;
+			WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(fragmentView);
+			if (insets != null)
+			{
+				statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+			}
+
+			int actionBarHeight = 0;
+			if (requireActivity() instanceof AppCompatActivity)
+			{
+				ActionBar actionBar = ((AppCompatActivity) requireActivity()).getSupportActionBar();
+				if (actionBar != null)
+				{
+					actionBarHeight = actionBar.getHeight();
+				}
+			}
+			int expectedTop = statusBarHeight + actionBarHeight;
+
+			int[] screenLocation = new int[2];
+			listContainer.getLocationOnScreen(screenLocation);
+			int actualTop = screenLocation[1];
+
+			// Comfortably below "unpadded" (0) but still well short of the correct offset -
+			// avoids both a false negative from minor measurement variance and a false
+			// positive that would double-pad an already-correct layout.
+			if (actualTop < statusBarHeight)
+			{
+				listContainer.setPadding(
+					listContainer.getPaddingLeft(),
+					listContainer.getPaddingTop() + (expectedTop - actualTop),
+					listContainer.getPaddingRight(),
+					listContainer.getPaddingBottom());
+			}
+		}
+
+		/**
+		 * Set this fragment as the click listener for a preference, if it exists in the
+		 * currently displayed (sub-)screen. findPreference() only searches the tree rooted
+		 * at whichever screen setPreferencesFromResource() was given - a key that lives in
+		 * a different top-level PreferenceScreen won't be found, which is expected rather
+		 * than an error.
+		 */
+		private void setPrefClickListener(String key)
+		{
+			Preference pref = findPreference(key);
+			if (pref != null)
+			{
+				pref.setOnPreferenceClickListener(this);
+			}
+		}
+
+		@Override
+		public void onResume()
+		{
+			super.onResume();
 			// add handler for selection update
 			prefs.registerOnSharedPreferenceChangeListener(this);
+		}
+
+		@Override
+		public void onPause()
+		{
+			prefs.unregisterOnSharedPreferenceChangeListener(this);
+			super.onPause();
+		}
+
+		@Override
+		public void onDisplayPreferenceDialog(@NonNull Preference preference)
+		{
+			if (preference instanceof SearchableMultiSelectListPreference)
+			{
+				SearchableMultiSelectListPreferenceDialogFragment fragment =
+					SearchableMultiSelectListPreferenceDialogFragment.newInstance(preference.getKey());
+				fragment.setTargetFragment(this, 0);
+				fragment.show(getParentFragmentManager(), "androidx.preference.PreferenceFragment.DIALOG");
+				return;
+			}
+			super.onDisplayPreferenceDialog(preference);
 		}
 
 		/**
@@ -143,6 +329,7 @@ public class SettingsActivity
 		void setupProtoSelection()
 		{
 			ListPreference pref = (ListPreference) findPreference(KEY_PROT_SELECT);
+			if (pref == null) return;
 			ElmProt.PROT[] values = ElmProt.PROT.values();
 			CharSequence[] titles = new CharSequence[values.length];
 			CharSequence[] keys = new CharSequence[values.length];
@@ -161,29 +348,30 @@ public class SettingsActivity
 			pref.setSummary(pref.getEntry());
 		}
 
-        /**
-         * set up protocol selection
-         */
-        void setupElmTimingSelection()
-        {
-            ListPreference pref = (ListPreference) findPreference(ELM_TIMING_SELECT);
-            ElmProt.AdaptTimingMode[] values = ElmProt.AdaptTimingMode.values();
-            CharSequence[] titles = new CharSequence[values.length];
-            CharSequence[] keys = new CharSequence[values.length];
-            int i = 0;
-            for (ElmProt.AdaptTimingMode mode : values)
-            {
-                titles[i] = mode.toString();
-                keys[i] = mode.toString();
-	            i++;
-            }
-            // set enries and keys
-            pref.setEntries(titles);
-            pref.setEntryValues(keys);
-            pref.setDefaultValue(titles[0]);
-            // show current selection
-            pref.setSummary(pref.getEntry());
-        }
+		/**
+		 * set up protocol selection
+		 */
+		void setupElmTimingSelection()
+		{
+			ListPreference pref = (ListPreference) findPreference(ELM_TIMING_SELECT);
+			if (pref == null) return;
+			ElmProt.AdaptTimingMode[] values = ElmProt.AdaptTimingMode.values();
+			CharSequence[] titles = new CharSequence[values.length];
+			CharSequence[] keys = new CharSequence[values.length];
+			int i = 0;
+			for (ElmProt.AdaptTimingMode mode : values)
+			{
+				titles[i] = mode.toString();
+				keys[i] = mode.toString();
+				i++;
+			}
+			// set entries and keys
+			pref.setEntries(titles);
+			pref.setEntryValues(keys);
+			pref.setDefaultValue(titles[0]);
+			// show current selection
+			pref.setSummary(pref.getEntry());
+		}
 
 		/**
 		 * set up protocol selection
@@ -192,6 +380,7 @@ public class SettingsActivity
 		{
 			MultiSelectListPreference pref =
 				(MultiSelectListPreference) findPreference(ELM_CMD_DISABLE);
+			if (pref == null) return;
 			ElmProt.CMD[] values = ElmProt.CMD.values();
 			HashSet<String> selections = new HashSet<>();
 			CharSequence[] titles = new CharSequence[values.length];
@@ -216,6 +405,7 @@ public class SettingsActivity
 		void setupCommMediaSelection()
 		{
 			ListPreference pref = (ListPreference) findPreference(KEY_COMM_MEDIUM);
+			if (pref == null) return;
 			CommService.MEDIUM[] values = CommService.MEDIUM.values();
 			CharSequence[] titles = new CharSequence[values.length];
 			CharSequence[] keys = new CharSequence[values.length];
@@ -239,8 +429,9 @@ public class SettingsActivity
 		 */
 		void setupPidSelection()
 		{
-			MultiSelectListPreference itemList =
-				(MultiSelectListPreference) findPreference(KEY_DATA_ITEMS);
+			SearchableMultiSelectListPreference itemList =
+				(SearchableMultiSelectListPreference) findPreference(KEY_DATA_ITEMS);
+			if (itemList == null) return;
 
 			// collect data items for selection
 			items = ObdProt.dataItems.getSvcDataItems(ObdProt.OBD_SVC_DATA);
@@ -275,6 +466,7 @@ public class SettingsActivity
 		void setPrefsText(String key)
 		{
 			Preference prefComp = findPreference(key);
+			if (prefComp == null) return;
 			prefComp.setOnPreferenceClickListener(this);
 			String value = prefs.getString(key, null);
 			if (value != null)
@@ -297,19 +489,62 @@ public class SettingsActivity
 			boolean bluetoothSelected =
 				String.valueOf(CommService.MEDIUM.BLUETOOTH.ordinal())
 					.equals(prefs.getString(KEY_COMM_MEDIUM,""));
+			boolean usbSelected =
+					String.valueOf(CommService.MEDIUM.USB.ordinal())
+							.equals(prefs.getString(KEY_COMM_MEDIUM,""));
 
 			// enable/disable network specific entries
 			for(String key : networkKeys)
 			{
 				Preference pref = findPreference(key);
-				pref.setEnabled(networkSelected);
+				if (pref != null) pref.setEnabled(networkSelected);
 			}
 
 			// enable/disable bluetooth specific entries
 			for(String key : bluetoothKeys)
 			{
 				Preference pref = findPreference(key);
-				pref.setEnabled(bluetoothSelected);
+				if (pref != null) pref.setEnabled(bluetoothSelected);
+			}
+
+			// enable/disable usb specific entries
+			for(String key : usbKeys)
+			{
+				Preference pref = findPreference(key);
+				if (pref != null) pref.setEnabled(usbSelected);
+			}
+		}
+
+		private void openLogDirectory()
+		{
+			java.io.File logDir = new java.io.File(
+					FileHelper.getPath(requireContext()), "log");
+			if (!logDir.isDirectory())
+			{
+				Toast.makeText(requireContext(),
+						R.string.log_dir_not_found,
+						Toast.LENGTH_LONG).show();
+				return;
+			}
+			try
+			{
+				Intent intent = new Intent(Intent.ACTION_VIEW);
+				intent.setDataAndType(Uri.fromFile(logDir), "resource/folder");
+				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				startActivity(Intent.createChooser(intent,
+						getString(R.string.open_log_dir)));
+			}
+			catch (Exception e)
+			{
+				// No file manager installed, or Android 7+ blocked file:// URI;
+				// copy the path to clipboard as a fallback.
+				ClipboardManager cm = (ClipboardManager)
+						requireContext().getSystemService(CLIPBOARD_SERVICE);
+				cm.setPrimaryClip(ClipData.newPlainText(
+						"log_dir", logDir.getAbsolutePath()));
+				Toast.makeText(requireContext(),
+						R.string.log_dir_no_app,
+						Toast.LENGTH_LONG).show();
 			}
 		}
 
@@ -324,6 +559,11 @@ public class SettingsActivity
 					// special handling for bitcoin VIEW intent
 					startActivity(intent);
 				}
+				else if(KEY_OPEN_LOG_DIR.equals(preference.getKey()))
+				{
+					openLogDirectory();
+					return true;
+				}
 				else
 				{
 					// OPEN intents require result handling
@@ -334,7 +574,7 @@ public class SettingsActivity
 			catch(Exception e)
 			{
 				log.log(Level.SEVERE, "Settings", e);
-				Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_LONG).show();
+				Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_LONG).show();
 			}
 			return true;
 		}
@@ -388,6 +628,17 @@ public class SettingsActivity
 					.setEnabled(ElmProt.AdaptTimingMode.SOFTWARE.toString()
 						          .equals(((ListPreference)pref).getValue())
 					           );
+
+			if(KEY_APP_LANGUAGE.equals(key))
+			{
+				// Apply new language immediately
+				SettingsActivity.applyLocale(requireActivity());
+
+				// Show restart message
+				Toast.makeText(requireContext(),
+				              getString(R.string.restart_required),
+				              Toast.LENGTH_LONG).show();
+			}
 		}
 	}
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="translation_credits">번역 김명준</string>
-    <string name="app_description">ELEM327 블루투스 아답터용 안드로이드 OBD 자량 진단 앱</string>
+    <string name="translation_credits">번역: 김명준, 이정희, DDinghoya</string>
+    <string name="app_description">ELEM327 블루투스 어탭터용 안드로이드 OBD 자량 진단 앱</string>
     <string name="title_connecting">연결중…</string>
     <string name="title_connected_to">연결됨</string>
     <string name="logo">로고</string>
@@ -31,7 +31,7 @@
 \n  다른 제조업체의 특정 삭제 / 재설정 작업이 발생할 수 있습니다.
 \n  데이터 손실로 인해 차량이 짧게 작동 할 수 있습니다.
 \n  ECU가 스스로를 재 보정하는 동안.</string>
-    <string name="select_device">아답터 선택</string>
+    <string name="select_device">어댑터 선택</string>
     <string name="none_paired">디바이스와 연결안됨</string>
     <string name="none_found">디바이스를 찾을수 없습니다</string>
     <string name="title_paired_devices">디바이스 연결됨</string>
@@ -56,16 +56,16 @@
     <string name="filter">선택한 필터</string>
     <string name="settings">설정</string>
     <string name="common_settings">공통설정</string>
-    <string name="measure_system_description">시스템측정단위(미터법/영국식)</string>
+    <string name="measure_system_description">측정 단위 시스템 (미터법 / 영국식)</string>
     <string name="measure_system">측정단위</string>
     <string name="metric">미터법</string>
-    <string name="imperial">영국미터법</string>
+    <string name="imperial">영국식 미터법</string>
     <string name="items_for_display">표시할 데이터 항목</string>
     <string name="items_for_display_descr">표시 할 모든 데이터 항목을 선택하십시요…</string>
     <string name="debugging">디버깅</string>
     <string name="logging_level">로그인 레벨</string>
     <string name="logging_level_description">디버그 로그 파일에 기록 할 세부 정보 수준</string>
-    <string name="last_elm">마지막 ELM-adapter 다시 연결</string>
+    <string name="last_elm">마지막 ELM-어댑터 다시 연결</string>
     <string name="last_ecu">마지막 ECU 다시 연결</string>
     <string name="last_service">마지막 OBD 서비스</string>
     <string name="last_data_items">마지막으로 선택한 데이터 항목</string>
@@ -85,17 +85,15 @@
     <string name="obd_opt_description">OBD 프로토콜 / 차량 통신 옵션</string>
     <string name="select_protocol">선호하는 OBD 프로토콜</string>
     <string name="plugin_manager">플러그인 관리자</string>
-    <string name="configure">환결설정</string>
+    <string name="configure">구성</string>
     <string name="select_fault_code">오류 코드 선택 …</string>
-    <string name="select_medium">어댑터 종류 …</string>
-    <string name="devices_found">%d USB 디바이스 찾지못함</string>
+    <string name="select_medium">어댑터 유형 …</string>
+    <string name="devices_found">%d USB 디바이스를 찾음</string>
     <string name="min_elm_timeout">Min. ELM 시간종료 [ms]</string>
     <string name="unabletoconnect">기기를 연결할 수 없습니다</string>
     <string name="connectionlost">기기 연결이 끊어졌습니다</string>
     <string name="elm_timeout_descr">ELM 응답을 기다리는 최소 시간 제한 [ms]</string>
     <string name="day_night_mode">주/야간 모드</string>
-    <string name="night_mode_description">디스플레이를 어두운 배경으로 설정</string>
-    <string name="night_mode">야간모드</string>
     <string name="disable_elm_cmds">사용하지 않는 ELM 명령</string>
     <string name="disable_elm_cmds_descr">ELM 명령을 활성화 / 비활성화합니다</string>
     <string name="elm_adaptive_timing">ELM 적응 타이밍</string>
@@ -136,7 +134,7 @@
     <string name="data_disable_max_description">"항목이 비활성화되기 전에  잘못된 데이터 응답 수"</string>
     <string name="autohide_toolbar">툴바 숨기기</string>
     <string name="autohide_toolbar_description">지연없는 활동 후 도구 모음 자동 숨기기</string>
-    <string name="autohide_delay">툴바 지연 숨기기 [s]</string>
+    <string name="autohide_delay">툴바 지연 숨기기 [초]</string>
     <string name="autohide_delay_description">몇 초동안 활동이 없을때 툴바를 숨길지여부</string>
     <string name="csv_export_options">CSV 내보내기 옵션</string>
     <string name="csv_export_description">CSV 내보내기 파일 형식 지정 옵션</string>
@@ -154,17 +152,35 @@
     <string name="toolbar_overlay">오버레이로 표시</string>
     <string name="toolbar_overlay_sum">기본 화면을 겹쳐서 표시하는 툴바</string>
     <string name="license">라이센스 …</string>
-    <string name="donation">지원 프로젝트 …</string>
+    <string name="donation">프로젝트 지원 …</string>
     <string name="libraries">라이브러리…</string>
     <string name="libraries_sum">프로젝트에 사용 된 라이브러리 …</string>
-    <string name="release_history">출시 내역 …</string>
+    <string name="release_history">개정 이력…</string>
     <string name="graphic_design">그래픽 디자인</string>
-    <string name="plugin_data">플러그인 데이터</string>
     <string name="long_press_dfc_hint">온라인 검색을 하려면 DFC를 길게 누르세요…</string>
-    <string name="process_vars">변수 처리</string>
-    <string name="unfilter">필터 제거</string>
-    <string name="plugin_manager_desc">감지된 플러그인들에 대한 관리자</string>
-    <string name="graph_actions">활동 그래프 그리기</string>
-    <string name="master">마스터</string>
     <string name="service_freezeframes">OBD 프레임 멈춤</string>
+    <string name="comm_baudrate_description">USB 직렬 통신 속도</string>
+    <string name="comm_baudrate">ELM 보오 레이트</string>
+    <string name="copied_to_clipboard">클립보드에 복사됨</string>
+    <string name="service_testcontrol">OBD 테스트 제어</string>
+    <string name="display_color">디스플레이 색상</string>
+    <string name="customize_display">데이터 화면표시 사용자 정의</string>
+    <string name="display_range">화면표시 범위</string>
+    <string name="reset_default">기본값</string>
+    <string name="obd_test_progress">OBD 테스트 제어가 진행중입니다.
+\n 차량 반응을 확인하십시오.</string>
+    <string name="obd_test_confirm">OBD 테스트 제어가 요청되었습니다.
+\n
+\n 요청된 OBD 테스트 컨트롤은 다음을 생성할 수 있습니다.
+\n - 차량의 움직임
+\n - 매연
+\n - 높은 배기 온도
+\n - 시끄러운 엔진 소음
+\n - 연료 증기
+\n - 기타.
+\n
+\n 안전한 테스트 환경에서만 자신의 위험을 감수하고, 이 테스트 제어를 수행하도록 확인하십시오!</string>
+    <string name="full_screen_display_description">앱 표시에 전체 화면 사용</string>
+    <string name="full_screen_display">전체 화면 표시</string>
+    <string name="update_period_s">업데이트 기간 [s]</string>
 </resources>

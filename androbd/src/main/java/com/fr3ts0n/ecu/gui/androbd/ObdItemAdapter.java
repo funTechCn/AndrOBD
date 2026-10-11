@@ -55,6 +55,24 @@ import java.util.Set;
 class ObdItemAdapter extends ArrayAdapter<Object>
         implements PvChangeListener
 {
+    /**
+     * ViewHolder class for efficient view recycling
+     * Improves ListView performance significantly
+     */
+    private static class ViewHolder {
+        TextView tvDescr;
+        TextView tvValue;
+        TextView tvUnits;
+        ProgressBar progressBar;
+        
+        ViewHolder(View convertView) {
+            tvDescr = convertView.findViewById(R.id.obd_label);
+            tvValue = convertView.findViewById(R.id.obd_value);
+            tvUnits = convertView.findViewById(R.id.obd_units);
+            progressBar = convertView.findViewById(R.id.bar);
+        }
+    }
+    
     transient PvList pvs;
     final transient LayoutInflater mInflater;
     transient static final String FID_DATA_SERIES = "SERIES";
@@ -137,7 +155,7 @@ class ObdItemAdapter extends ArrayAdapter<Object>
     private Collection<Object> getMatchingItems(PvList pvs, Set<String> pidsToShow)
     {
         HashSet<Object> filtered = new HashSet<>();
-        for (Object key : pidsToShow)
+        for (String key : pidsToShow)
         {
             IndexedProcessVar pv = (IndexedProcessVar) pvs.get(key);
             if (pv != null)
@@ -166,23 +184,25 @@ class ObdItemAdapter extends ArrayAdapter<Object>
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
+        ViewHolder holder;
+        
         // get data PV
         EcuDataPv currPv = (EcuDataPv) getItem(position);
 
         if (convertView == null)
         {
             convertView = mInflater.inflate(R.layout.obd_item, parent, false);
+            holder = new ViewHolder(convertView);
+            convertView.setTag(holder);
+        } else {
+            holder = (ViewHolder) convertView.getTag();
         }
 
         // fill view fields with data
-
+        
         // description text
-        TextView tvDescr = convertView.findViewById(R.id.obd_label);
-        tvDescr.setText(String.valueOf(currPv.get(EcuDataPv.FID_DESCRIPT)));
-        TextView tvValue = convertView.findViewById(R.id.obd_value);
-        TextView tvUnits = convertView.findViewById(R.id.obd_units);
-        ProgressBar pb = convertView.findViewById(R.id.bar);
-
+        holder.tvDescr.setText(String.valueOf(currPv.get(EcuDataPv.FID_DESCRIPT)));
+        
         // format value string
         String fmtText;
         Object colVal = currPv.get(EcuDataPv.FID_VALUE);
@@ -190,6 +210,8 @@ class ObdItemAdapter extends ArrayAdapter<Object>
         Number min = (Number) currPv.get(EcuDataPv.FID_MIN);
         Number max = (Number) currPv.get(EcuDataPv.FID_MAX);
         int pid = currPv.getAsInt(EcuDataPv.FID_PID);
+        // Get display color ...
+        int pidColor = ColorAdapter.getItemColor(currPv);
 
         try
         {
@@ -215,12 +237,12 @@ class ObdItemAdapter extends ArrayAdapter<Object>
                     && max != null
                     && colVal instanceof Number)
             {
-                pb.setVisibility(ProgressBar.VISIBLE);
-                pb.getProgressDrawable().setColorFilter(ChartActivity.getItemColor(pid!=0?pid:position), PorterDuff.Mode.SRC_IN);
-                pb.setProgress((int) (100 * ((((Number) colVal).doubleValue() - min.doubleValue()) / (max.doubleValue() - min.doubleValue()))));
+                holder.progressBar.setVisibility(ProgressBar.VISIBLE);
+                holder.progressBar.getProgressDrawable().setColorFilter(pidColor, PorterDuff.Mode.SRC_IN);
+                holder.progressBar.setProgress((int) (100 * ((((Number) colVal).doubleValue() - min.doubleValue()) / (max.doubleValue() - min.doubleValue()))));
             } else
             {
-                pb.setVisibility(ProgressBar.GONE);
+                holder.progressBar.setVisibility(ProgressBar.GONE);
             }
 
         } catch (Exception ex)
@@ -228,8 +250,8 @@ class ObdItemAdapter extends ArrayAdapter<Object>
             fmtText = String.valueOf(colVal);
         }
         // set value
-        tvValue.setText(fmtText);
-        tvUnits.setText(currPv.getUnits());
+        holder.tvValue.setText(fmtText);
+        holder.tvUnits.setText(currPv.getUnits());
 
         return convertView;
     }

@@ -37,7 +37,9 @@ public abstract class CommService
 	/** communication media */
 	public enum MEDIUM
 	{
+		DEMO,         ///< Demo mode (fake communication)
 		BLUETOOTH,    ///< Bluetooth device
+		BLE,          ///< Bluetooth LE device
 		USB,          ///< USB device
 		NETWORK       ///< Network/WIFI device
 	}
@@ -56,7 +58,7 @@ public abstract class CommService
 	}
 
 	// Debugging
-	private static final String TAG = "CommService";
+	static final String TAG = "CommService";
 
 	static final Logger log = Logger.getLogger(TAG);
 
@@ -112,7 +114,16 @@ public abstract class CommService
 		// Give the new state to the Handler so the UI Activity can update
 		mHandler.obtainMessage(MainActivity.MESSAGE_STATE_CHANGE, state).sendToTarget();
 	}
-	
+
+	/**
+	 * Return the current connection state.
+	 * @return current connection state
+	 */
+	synchronized STATE getState()
+	{
+		return mState;
+	}
+
 	/**
 	 * Start the chat service. Specifically start AcceptThread to begin a session
 	 * in listening (server) mode. Called by the Activity onResume()

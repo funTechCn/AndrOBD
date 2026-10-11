@@ -9,7 +9,7 @@
     <string name="obd_none">INGEN tjänst</string>
     <string name="obd_services">OBD-tjänster</string>
     <string name="obd_veh_info">OBD fordonsinfo</string>
-    <string name="obd_data">ODB-data</string>
+    <string name="obd_data">OBD-data</string>
     <string name="obd_codes">OBD-felkoder</string>
     <string name="obd_permanentcodes">OBD-felkoder (permanenta)</string>
     <string name="obd_pendingcodes">OBD-felkoder (pendlande)</string>
@@ -43,7 +43,7 @@
     <string name="debugging">Avlusar</string>
     <string name="logging_level">Loggningsnivå</string>
     <string name="keep_screen_on">Behåll den huvudsakliga skärmen på</string>
-    <string name="app_description">Android ODB fordonsdiagnostiksapp för blåtandsadaptern ELM327</string>
+    <string name="app_description">Android OBD fordonsdiagnostiksapp för ELM327-blåtandsadaptrar</string>
     <string name="service_freezeframes">OBD-frysta ramar</string>
     <string name="obd_clear_info">Detta kommer att åẗerställa MIL och rensa all utsläppsrelaterad
 \n diagnostikinformation, inklusive
@@ -95,8 +95,6 @@
     <string name="connectionlost">Enhetsanslutning förlorades</string>
     <string name="elm_timeout_descr">Minsta tidsgräns i [ms] att vänta på ELM-svar</string>
     <string name="day_night_mode">Dag-/Nattläge</string>
-    <string name="night_mode_description">Stället in visning av mörk bakgrund</string>
-    <string name="night_mode">Nattläge</string>
     <string name="disable_elm_cmds">Inaktiverade ELM-kommandon</string>
     <string name="disable_elm_cmds_descr">aktivera/inaktivera ELM-kommandon</string>
     <string name="elm_adaptive_timing">Adaptiv ELM-tidtagning</string>
@@ -155,16 +153,45 @@
     <string name="toolbar_overlay">Visa som överlagring</string>
     <string name="toolbar_overlay_sum">Visa verktygsfält ovan på huvudskärm</string>
     <string name="license">Licensiering…</string>
-    <string name="donation">Stöd projektet…</string>
+    <string name="donation">Stöd projekt …</string>
     <string name="libraries">Bibliotek…</string>
     <string name="libraries_sum">Bibliotek som använts i projektet…</string>
-    <string name="release_history">Versionshistorik…</string>
+    <string name="release_history">Historik för utgåvan …</string>
     <string name="graphic_design">Grafisk design</string>
-    <string name="plugin_data">Insticksdata</string>
     <string name="long_press_dfc_hint">Klicka och håll in DFC för att söka online …</string>
-    <string name="process_vars">Bearbeta variabler</string>
-    <string name="unfilter">Ta bort filter</string>
-    <string name="plugin_manager_desc">Hantering av detekterade insticksprogram</string>
-    <string name="graph_actions">Grafhandlingar</string>
-    <string name="master">bemästra</string>
+    <string name="copied_to_clipboard">Kopierades till klippbordet</string>
+    <string name="service_testcontrol">Testkontroll för OBD</string>
+    <string name="obd_test_progress">OBD-testkontroll pågår.
+\n Kontrollera fordonets reaktion.</string>
+    <string name="comm_baudrate">ELM-baudfrekvens</string>
+    <string name="comm_baudrate_description">Hastighet för seriell USB-kommunikation</string>
+    <string name="display_range">Visningsområde</string>
+    <string name="reset_default">Standard</string>
+    <string name="full_screen_display">Helskärmsvisning</string>
+    <string name="full_screen_display_description">Använd helskärm för att visa appen</string>
+    <string name="display_color">Visningsfärg</string>
+    <string name="customize_display">Anpassa datavisning</string>
+    <string name="update_period_s">Uppdateringsperiod [er]</string>
+    <string name="obd_test_confirm">OBD-testkontroll begärs.
+\n
+\n Den begärda OBD-provningskontrollen kan generera:
+\n - Fordonsrörelse.
+\n - Avgasrök.
+\n - Hög avgastemperatur
+\n - Högt motorljud
+\n - Bränsleångor
+\n - etc.
+\n
+\n Bekräfta att du utför denna testkontroll på egen risk och endast i en säker testmiljö!</string>
+    <string name="select_ble_device">Välj BLE-adapter</string>
+    <string name="language_selection_description">Välj programspråk</string>
+    <string name="language_system_default">Systemstandard</string>
+    <string name="restart_required">Omstart krävs för att språkändringen ska tillämpas</string>
+    <string name="no_obd_files_found">Inga OBD-filer hittades</string>
+    <string name="open_log_dir">Öppna loggkatalogen</string>
+    <string name="open_log_dir_description">Öppna loggmappen i en filhanterare</string>
+    <string name="log_dir_not_found">Loggkatalogen hittades inte — aktivera loggning och starta sedan om appen</string>
+    <string name="log_dir_no_app">Ingen filhanterare hittades — sökvägen kopierades till urklipp</string>
+    <string name="theme_mode">Tema</string>
+    <string name="theme_mode_description">Följ systemets tema eller tvinga ljust eller mörkt tema</string>
 </resources>

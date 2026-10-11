@@ -6,6 +6,7 @@
     <string name="chart">Diagramm</string>
     <string name="logo">Logo</string>
     <string name="none_found">Keine Geräte gefunden</string>
+    <string name="select_ble_device">BLE-Adapter wählen</string>
     <string name="none_paired">Keine Geräte gepaart</string>
     <string name="obd_clearcodes">Fehlercodes löschen</string>
     <string name="obd_codes">OBD Fehlercodes</string>
@@ -20,7 +21,7 @@
     <string name="service_freezeframes">OBD Freeze Frames</string>
     <string name="share">teilen</string>
     <string name="time">Zeit [s]</string>
-    <string name="title_connected_to">Verbunden %s</string>
+    <string name="title_connected_to">Verbunden mit %s</string>
     <string name="title_connecting">Verbinde…</string>
     <string name="title_paired_devices">Gepaarte Geräte</string>
     <string name="obd_clear_info">Dies wird die Motorkontrollleuchte (MIL) zurücksetzen und alle abgasrelevanten Diagnoseinformationen löschen, inklusive: 
@@ -37,6 +38,18 @@
 \n 
 \n Andere, herstellerspezifische Einstellungen können dadurch verloren gehen. 
 \n Dadurch kann eine Lernphase nötig werden, während welcher der Motor ungleichmäßig läuft.</string>
+    <string name="obd_test_progress">OBD Teststeuerung aktiviert.\n
+        Bitte Fahrzeugreaktion prüfen.</string>
+    <string name="obd_test_confirm">OBD Teststeuerung\n\n
+        Der angeforderte Test kann folgendes verusachen:\n
+        - Fahrzeugbewegung\n
+        - Abgasrauch\n
+        - Hohe Abgastemperatur\n
+        - Laute Motorgeräusche\n
+        - Kraftstoffdämpfe\n
+        - etc.\n\n
+        Bitte bestätigen Sie diesen Test auf eigene Gefahr in einer betriebssicheren Umgebung durchzuführen!
+    </string>
     <string name="demo_started">DEMO-Modus gestartet</string>
     <string name="demo_stopped">DEMO-Modus beendet</string>
     <string name="load">Messung laden</string>
@@ -84,8 +97,6 @@
     <string name="unabletoconnect">Verbindung nicht möglich</string>
     <string name="elm_timeout_descr">Minimaler Timeout [ms] für ELM Antworten</string>
     <string name="day_night_mode">Tag/Nacht Ansicht</string>
-    <string name="night_mode">Nachtmodus</string>
-    <string name="night_mode_description">Ansicht mit dunklem Hintergrund</string>
     <string name="disable_elm_cmds">Deaktivierte ELM-Befehle</string>
     <string name="disable_elm_cmds_descr">ELM Befehle aktivieren / deaktivieren</string>
     <string name="elm_adaptive_timing">Adaptives ELM timing</string>
@@ -97,7 +108,7 @@
     <string name="use_last_settings_description">Letzte Einstellungen bei Start verwenden (BT Adresse, ECU Adresse, Anzeige …)</string>
     <string name="last_data_items">Letzte Datenauswahl</string>
     <string name="last_ecu">Mit letzter ECU verbinden</string>
-    <string name="last_elm">Mit letztem ELM-Adapter verbinden</string>
+    <string name="last_elm">Zum letzten ELM-Adapter verbinden</string>
     <string name="last_service">Letzter OBD service</string>
     <string name="last_view_mode">Letzter Datenanzeige-Modus</string>
     <string name="common_settings_description">Allgemeine Programmeinstellungen</string>
@@ -145,10 +156,10 @@
     <string name="send_after_export_descr">Direkt nach dem Export nach Senden der CSV-Datei fragen\?</string>
     <string name="tab">Tab</string>
     <string name="comma">Komma</string>
-    <string name="configure">Konfigurieren</string>
+    <string name="configure">Konfiguration</string>
     <string name="data_disable_max">Daten Deaktivierungs-Limit</string>
     <string name="data_disable_max_description">Anzahl fehlerhaft erhalterer Daten bevor Datenpunkt deaktiviert wird</string>
-    <string name="plugin_manager">Plugin Verwaltung</string>
+    <string name="plugin_manager">Pluginverwaltung</string>
     <string name="toolbar_overlay">Überlagernd einblenden</string>
     <string name="toolbar_overlay_sum">Einblendung der Toolbar überlagert Datenanzeige</string>
     <string name="donation">Projekt unterstützen …</string>
@@ -158,10 +169,20 @@
     <string name="release_history">Versionen …</string>
     <string name="graphic_design">Grafisches Design</string>
     <string name="long_press_dfc_hint">Fehlercode lange drücken für Online-Suche</string>
-    <string name="plugin_data">Plugin-Daten</string>
-    <string name="process_vars">Prozessvariablen</string>
-    <string name="unfilter">Filter entfernen</string>
-    <string name="plugin_manager_desc">Verwaltung von erkannten Plugin-Erweiterungen</string>
-    <string name="graph_actions">Grafik-Aktionen</string>
-    <string name="master">Hauptrechner</string>
+    <string name="comm_baudrate">ELM Baudrate</string>
+    <string name="comm_baudrate_description">USB serielle Übertragungsgeschwindigkeit</string>
+    <string name="service_testcontrol">OBD Teststeuerung</string>
+    <string name="copied_to_clipboard">Kopiert in Zwischenablage</string>
+    <string name="full_screen_display">Vollbildanzeige</string>
+    <string name="full_screen_display_description">Gesamten Bildschirm zur Anzeige verwenden</string>
+    <string name="display_color">Ansichtsfarbe</string>
+    <string name="customize_display">Datenanzeige anpassen</string>
+    <string name="display_range">Ansichts- Datenbereich</string>
+    <string name="reset_default">Vorgabe</string>
+    <string name="update_period_s">Aktualisierungszeit [s]</string>
+    <string name="language_selection_description">Sprache auswählen</string>
+    <string name="language_system_default">Systemsprache</string>
+    <string name="restart_required">Neustart zur Anwendung</string>
+    <string name="no_obd_files_found">Keine OBD-Dateien gefunden</string>
+    <string name="language_english"></string>
 </resources>

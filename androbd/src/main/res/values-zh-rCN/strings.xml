@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="translation_credits">由 fr3ts0n，infinitysky 翻译</string>
+    <string name="translation_credits">由 fr3ts0n、infinitysky和TTsdzb 翻译</string>
     <string name="app_description">Android OBD，用于ELM327蓝牙适配器的车辆诊断应用</string>
     <string name="title_connecting">正在连接…</string>
     <string name="title_connected_to">已连接 %s</string>
@@ -16,20 +16,22 @@
     <string name="obd_permanentcodes">OBD错误码（永久）</string>
     <string name="obd_pendingcodes">OBD错误码（待定）</string>
     <string name="obd_clearcodes">清除错误码</string>
-    <string name="obd_clear_info">这将重置故障指示灯（MIL）和清除所有排放相关的诊断数据 
-\n信息, 包括： 
-\n·- 诊断故障代码 
-\n·- 冻结的帧数据 
-\n·- 氧气传感器测试数据 
-\n·- 系统监控测试的状态数据 
-\n·- 板载监控测试的结果数据 
-\n·- 故障指示灯（MIL）处于激活状态时的旅行距离 
-\n·- 车身稳定控制系统（DTCs）数据清除后的旅行距离 
-\n·- 故障指示灯（MIL）处于激活状态时的引擎运行时间 
-\n·- 车身稳定控制系统（DTCs）数据清除后的时间 
-\n 
-\n· 可能执行其他由制造商指定的清除/重置动作。 
-\n· 在ECU重新校准自身的时间段内缺失的数据可能造成车辆短时间的运行状况不佳。</string>
+    <string name="obd_clear_info">这将重置故障指示灯（MIL）和清除所有排放相关的
+\n诊断数据信息，包括：
+\n·- 诊断故障代码
+\n·- 冻结的帧数据
+\n·- 氧气传感器测试数据
+\n·- 系统监控测试的状态数据
+\n·- 板载监控测试的结果数据
+\n·- 故障指示灯（MIL）处于激活状态后的旅行距离
+\n·- 车身稳定控制系统（DTCs）数据清除后的暖机次数
+\n·- 车身稳定控制系统（DTCs）数据清除后的旅行距离
+\n·- 故障指示灯（MIL）处于激活状态后的引擎运行时间
+\n·- 车身稳定控制系统（DTCs）数据清除后的时间
+\n
+\n· 可能执行其它由制造商指定的清除/重置动作。
+\n· 在 ECU 重新校准自身的时间段内，缺失的数据
+\n· 可能造成车辆短时间的运行状况不佳。</string>
     <string name="select_device">选择适配器类型</string>
     <string name="none_paired">没有配对设备</string>
     <string name="none_found">未发现设备</string>
@@ -92,8 +94,6 @@
     <string name="connectionlost">与设备连接已断开</string>
     <string name="elm_timeout_descr">等待ELM响应的最小超时时间 [ms]</string>
     <string name="day_night_mode">白天/夜间 视图模式</string>
-    <string name="night_mode_description">设置背景为黑色</string>
-    <string name="night_mode">夜间模式</string>
     <string name="disable_elm_cmds">禁用ELM指令</string>
     <string name="disable_elm_cmds_descr">启用/禁用 ELM指令</string>
     <string name="elm_adaptive_timing">ELM 自适应时间</string>
@@ -155,13 +155,37 @@
     <string name="donation">支持项目…</string>
     <string name="libraries">三方库…</string>
     <string name="libraries_sum">项目中使用的三方库…</string>
-    <string name="release_history">发布历史…</string>
+    <string name="release_history">发布记录…</string>
     <string name="graphic_design">平面设计</string>
-    <string name="plugin_data">插件数据</string>
     <string name="long_press_dfc_hint">长按DFC进行在线搜索…</string>
-    <string name="process_vars">进程变量</string>
-    <string name="unfilter">移除过滤器</string>
-    <string name="plugin_manager_desc">已检测到的插件管理器</string>
-    <string name="graph_actions">图形动作</string>
-    <string name="master">主体</string>
+    <string name="comm_baudrate_description">USB 串行通讯速度</string>
+    <string name="comm_baudrate">ELM 波特率</string>
+    <string name="copied_to_clipboard">已复制到剪贴板</string>
+    <string name="display_color">屏幕颜色</string>
+    <string name="reset_default">默认</string>
+    <string name="full_screen_display">全屏</string>
+    <string name="full_screen_display_description">为APP全屏</string>
+    <string name="service_testcontrol">OBD控制测试</string>
+    <string name="obd_test_progress">OBD控制测试进行中。
+\n 请检查车辆行为。</string>
+    <string name="obd_test_confirm">将进行OBD控制测试。
+\n
+\n 这可能会导致：
+\n - 车辆移动
+\n - 产生更多废气
+\n - 废气温度高
+\n - 引擎发出更大噪音
+\n - 释放燃油蒸汽
+\n 等状况。
+\n
+\n 请自行确认并保证该测试在安全场合中进行！</string>
+    <string name="customize_display">自定义数据显示</string>
+    <string name="display_range">显示范围</string>
+    <string name="select_ble_device">选择BLE适配器</string>
+    <string name="open_log_dir">打开日志目录</string>
+    <string name="open_log_dir_description">在文件管理器中打开日志文件夹</string>
+    <string name="log_dir_no_app">找不到文件管理器——路径已复制到剪贴板</string>
+    <string name="no_obd_files_found">未找到OBD文件</string>
+    <string name="language_selection_description">选择应用语言</string>
+    <string name="language_system_default">系统默认值</string>
 </resources>

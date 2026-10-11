@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="translation_credits">Oversettelse ved fr3ts0n</string>
+    <string name="translation_credits">Translation by fr3ts0n /StayicBlue</string>
     <string name="title_connecting">Kobler til…</string>
     <string name="title_connected_to">Tilkoblet %s</string>
     <string name="logo">Logo</string>
-    <string name="back_again_to_exit">Trykk \\\"Tilbake\\\" igjen for å lukke dette programmet.</string>
+    <string name="back_again_to_exit">"Trykk  tilbake igjen for å lukke dette programmet."</string>
     <string name="action_connect">Koble til</string>
     <string name="obd_none">INGEN tjeneste</string>
     <string name="obd_services">OBD-tjenester</string>
@@ -13,7 +13,7 @@
     <string name="obd_codes">OBD-feilkoder</string>
     <string name="obd_permanentcodes">OBD-feilkoder (permanente)</string>
     <string name="obd_pendingcodes">OBD-feilkoder (ventende)</string>
-    <string name="obd_clearcodes">Tøm feilkoder</string>
+    <string name="obd_clearcodes">Slett feilkoder</string>
     <string name="select_device">Velg adapter</string>
     <string name="none_found">Fant ingen enheter</string>
     <string name="send_to">Send til</string>
@@ -56,8 +56,6 @@
     <string name="unabletoconnect">Kunne ikke koble til enhet</string>
     <string name="connectionlost">Enhetstilkobling gikk tapt</string>
     <string name="day_night_mode">Dag/natt-visningsmodus</string>
-    <string name="night_mode_description">Bruk mørk bakgrunn</string>
-    <string name="night_mode">Nattmodus</string>
     <string name="disable_elm_cmds">Avskrudde ELM-kommandoer</string>
     <string name="disable_elm_cmds_descr">skru på/av ELM-kommandoer</string>
     <string name="select_ecu_addr">Velg ECU-adresse…</string>
@@ -110,7 +108,7 @@
     <string name="toolbar_overlay">Vis som overlag</string>
     <string name="toolbar_overlay_sum">Vis verktøyslinje over hovedskjermen</string>
     <string name="app_description">Android OBD-kjøretøydiagnostikkprogram for ELM327-Blåtannsadapter</string>
-    <string name="service_freezeframes">Fryste OBD-rammer</string>
+    <string name="service_freezeframes">OBD Lås Ramme</string>
     <string name="obd_clear_info">Dette vil tilbakestille MIL og tømme all utslippsrelatert diagnostikk
 \n informasjon, inkludert:
 \n - Diagnostikkfeilkoder
@@ -160,11 +158,21 @@
     <string name="csv_text_quoted_description">CSV-tekstfelter er inkludert innenfor sitattegn</string>
     <string name="send_after_export">Send etter eksportering</string>
     <string name="send_after_export_descr">Spør om forsendelse av CSV-fil rett etter eksportering\?</string>
-    <string name="plugin_data">Programtilleggsdata</string>
     <string name="long_press_dfc_hint">Trykk lenge på DFC for nettbasert søk…</string>
-    <string name="process_vars">Prosessvariabler</string>
-    <string name="unfilter">Fjern filter</string>
-    <string name="plugin_manager_desc">Behandler for oppdagede programtillegg</string>
-    <string name="graph_actions">Grafvalg</string>
-    <string name="master">master</string>
+    <string name="comm_baudrate_description">USB-seriellkommunikasjonshastighet</string>
+    <string name="comm_baudrate">ELM-baudrate</string>
+    <string name="service_testcontrol">OBD test kontroll</string>
+    <string name="copied_to_clipboard">Kopiert til utklippstavle</string>
+    <string name="obd_test_progress">OBD-testkontroll pågår. Vennligst sjekk kjøretøyets reaksjon.</string>
+    <string name="obd_test_confirm">OBD-testkontroll forespurt.
+\n
+\n Den forespurte OBD-testkontrollen kan generere:
+\n - Kjøretøyets bevegelse
+\n - Eksosrøyk 
+\n- Høy eksostemperatur 
+\n- Høy motorstøy 
+\n- Drivstoffdamp 
+\n- etc. 
+\nVennligst bekreft å utføre denne testkontrollen på egen risiko kun i et trygt testmiljø.</string>
+    <string name="reset_default">Standard</string>
 </resources>

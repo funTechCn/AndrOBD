@@ -19,10 +19,16 @@
 
 package com.fr3ts0n.ecu.gui.androbd;
 
+import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 
 import com.fr3ts0n.prot.ProtUtils;
 import com.fr3ts0n.prot.TelegramWriter;
@@ -31,6 +37,7 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
 /**
@@ -41,6 +48,10 @@ public class UsbCommService extends CommService
 {
 	private static UsbSerialPort sPort = null;
 	private SerialInputOutputManager mSerialIoManager;
+	public static final String INTENT_ACTION_GRANT_USB = ".GRANT_USB";
+
+	public static final String PREF_KEY_BAUDRATE = "comm_baudrate";
+	public static final int DEFAULT_BAUDRATE = 38400;
 
 	private final SerialInputOutputManager.Listener mListener =
 		new SerialInputOutputManager.Listener()
@@ -51,21 +62,18 @@ public class UsbCommService extends CommService
 			public void onRunError(Exception e)
 			{
 				log.log(Level.SEVERE, "onRunError: ", e);
-				connectionLost();
+				stop();
 			}
 
 			@Override
 			public void onNewData(final byte[] data)
 			{
-				log.finer("RX: " +
-					          ProtUtils.hexDumpBuffer(new String(data).toCharArray()));
+				log.finer("RX: " +ProtUtils.hexDumpBuffer(new String(data).toCharArray()));
 				for(byte chr : data)
 				{
 					switch (chr)
 					{
 						// ignore special characters
-						case 0:	case 1:	case 2: case 3: case 4:
-						case 5:	case 6: case 7: case 8: case 9:
 						case 32:
 							break;
 
@@ -76,8 +84,15 @@ public class UsbCommService extends CommService
 							// trigger message handling
 						case 10:
 						case 13:
-							if(message.length() > 0)
-								elm.handleTelegram(message.toCharArray());
+							try
+							{
+								if(!message.isEmpty())
+								{ elm.handleTelegram(message.toCharArray()); }
+							}
+							catch (Exception ex)
+							{
+								log.log(Level.WARNING, "handleTelegram", ex);
+							}
 							message = "";
 							break;
 
@@ -102,7 +117,6 @@ public class UsbCommService extends CommService
 	private void setDevice(UsbSerialPort port)
 	{
 		sPort = port;
-		mSerialIoManager = new SerialInputOutputManager(sPort, mListener);
 	}
 
 	@Override
@@ -113,30 +127,86 @@ public class UsbCommService extends CommService
 		start();
 	}
 
+	/**
+	 * Get preference int value
+	 *
+	 * @param key          preference key name
+	 * @param defaultValue numeric default value
+	 * @return preference int value
+	 */
+	@SuppressLint("DefaultLocale")
+	private int getPrefsInt(String key, int defaultValue)
+	{
+		int result = defaultValue;
+
+		try
+		{
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+			result = Integer.parseInt(Objects.requireNonNull(prefs.getString(key, String.valueOf(defaultValue))));
+		}
+		catch (Exception ex)
+		{
+			// log error message
+			log.severe(String.format("Preference '%s'(%d): %s", key, result, ex.toString()));
+		}
+
+		return result;
+	}
+
+	private int getBaudRate()
+	{
+		return getPrefsInt(PREF_KEY_BAUDRATE, DEFAULT_BAUDRATE);
+	}
+
 	@Override
 	public void start()
 	{
 		if (sPort != null)
 		{
+			// Ensure general USB access
 			final UsbManager usbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
-			UsbDeviceConnection connection = Objects.requireNonNull(usbManager)
-				                                 .openDevice(sPort.getDriver().getDevice());
+			if (usbManager == null)
+			{
+                connectionFailed();
+                return;
+            }
+			
+			// Request runtime permission to access USB serial port
+			UsbDevice device = sPort.getDriver().getDevice();
+			String intentStr = mContext.getPackageName() + INTENT_ACTION_GRANT_USB;
+			PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(intentStr), android.app.PendingIntent.FLAG_IMMUTABLE);
+			usbManager.requestPermission(device, usbPermissionIntent);
+			// Ensure access toUSB port is granted ...
+			if (!usbManager.hasPermission(device))
+			{
+				connectionFailed();
+				return;
+			}
+
+			// Open USB device
+            UsbDeviceConnection connection = usbManager.openDevice(sPort.getDriver().getDevice());
 			if (connection == null)
 			{
 				connectionFailed();
 				return;
 			}
 
+
 			try
 			{
+				// Open serial port
 				sPort.open(connection);
+				// set serial parameters
+				sPort.setParameters(getBaudRate(), 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
 				sPort.setDTR(true);
-				sPort.setParameters(38400, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+				sPort.setRTS(true);
 
+				// start communication thread
 				log.info("Starting io manager ..");
-				Thread runner = new Thread(mSerialIoManager);
-				runner.setPriority(Thread.MAX_PRIORITY);
-				runner.start();
+				// Initialize SerialIoManager AFTER opening sPort
+				// workaround for AndrOBD#285 / https://github.com/mik3y/usb-serial-for-android/issues/611
+				mSerialIoManager = new SerialInputOutputManager(sPort, mListener);
+				mSerialIoManager.start();
 
 				// we are connected -> signal connectionEstablished
 				connectionEstablished(sPort.toString());
@@ -181,11 +251,10 @@ public class UsbCommService extends CommService
 	@Override
 	public void write(byte[] out)
 	{
-		log.finer("RX: " +
-			          ProtUtils.hexDumpBuffer(new String(out).toCharArray()));
+		log.finer("TX: " +ProtUtils.hexDumpBuffer(new String(out).toCharArray()));
 		try
 		{
-			mSerialIoManager.writeAsync(out);
+			sPort.write(out,0);
 		}
 		catch(Exception ex)
 		{

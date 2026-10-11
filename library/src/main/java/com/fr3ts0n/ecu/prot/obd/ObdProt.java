@@ -27,6 +27,7 @@ import com.fr3ts0n.ecu.EcuDataItem;
 import com.fr3ts0n.ecu.EcuDataItems;
 import com.fr3ts0n.ecu.EcuDataPv;
 import com.fr3ts0n.ecu.ObdCodeItem;
+import com.fr3ts0n.ecu.ObdPid;
 import com.fr3ts0n.prot.ProtoHeader;
 import com.fr3ts0n.prot.TelegramListener;
 import com.fr3ts0n.prot.TelegramWriter;
@@ -35,7 +36,9 @@ import com.fr3ts0n.pvs.PvList;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Stack;
 import java.util.Vector;
 
 /**
@@ -54,10 +57,10 @@ public class ObdProt extends ProtoHeader
     public static final int OBD_SVC_FREEZEFRAME = 0x02;
     public static final int OBD_SVC_READ_CODES = 0x03;
     public static final int OBD_SVC_CLEAR_CODES = 0x04;
-    private static final int OBD_SVC_O2_RESULT = 0x05;
-    private static final int OBD_SVC_MON_RESULT = 0x06;
+    public static final int OBD_SVC_O2_RESULT = 0x05;
+    public static final int OBD_SVC_MON_RESULT = 0x06;
     public static final int OBD_SVC_PENDINGCODES = 0x07;
-    private static final int OBD_SVC_CTRL_MODE = 0x08;
+    public static final int OBD_SVC_CTRL_MODE = 0x08;
     public static final int OBD_SVC_VEH_INFO = 0x09;
     public static final int OBD_SVC_PERMACODES = 0x0A;
 
@@ -88,7 +91,7 @@ public class ObdProt extends ProtoHeader
         IMLOIF(0x13, "Incorrect message length or invalid format", DISP.NOTIFY, REACT.SKIP),
         RTL(0x14, "Response too long", DISP.NOTIFY, REACT.SKIP),
         BRR(0x21, "Busy repeat request", DISP.NOTIFY, REACT.REPEAT),
-        CNC(0x22, "Conditions not correct", DISP.ERROR, REACT.SKIP),
+        CNC(0x22, "Conditions not correct (SVC:0x%02X)", DISP.ERROR, REACT.CANCEL),
         RSE(0x24, "Request sequence error", DISP.ERROR, REACT.CANCEL),
         NRFSC(0x25, "No response from sub-net component", DISP.ERROR, REACT.RESET),
         FPEORA(0x26, "Failure prevents execution of requested action", DISP.ERROR, REACT.CANCEL),
@@ -108,20 +111,20 @@ public class ObdProt extends ProtoHeader
         /** NRC display classifiers */
         public enum DISP
         {
-            HIDE,
-            NOTIFY,
-            WARN,
-            ERROR
+            HIDE,       /**< Do NOT display error */
+            NOTIFY,     /**< Display notification (w/o confirmation) */
+            WARN,       /**< Display warning (w/ confirmation) */
+            ERROR       /**< Display error (w/ confirmation) */
         }
     
-        /** NRC reaction classifiers */
+        /** NRC immediate protocol reaction classifiers */
         public enum REACT
         {
-            IGNORE,
-            SKIP,
-            REPEAT,
-            CANCEL,
-            RESET
+            IGNORE,     /**< Ignore NRC */
+            SKIP,       /**< Skip last command */
+            REPEAT,     /**< Repeat last command */
+            CANCEL,     /**< Cancel command sequence / loop */
+            RESET       /**< Reset adapter */
         }
     
         public final int code;
@@ -181,7 +184,7 @@ public class ObdProt extends ProtoHeader
     private int msgService = OBD_SVC_NONE;
 
     /** List of PIDs supported by the vehicle */
-    private static final Vector<Integer> pidSupported = new Vector<Integer>();
+    private static final Vector<ObdPid> pidSupported = new Vector<ObdPid>();
 
     /** positive response fields */
     private static final int ID_OBD_SVC = 0;
@@ -264,8 +267,8 @@ public class ObdProt extends ProtoHeader
     public static PvList tCodes = new PvList();
     /** list of known fault codes */
     private static final EcuCodeList knownCodes = EcuConversions.codeList;
-    /** queue of ELM commands to be sent */
-    static final Vector<String> cmdQueue = new Vector<String>();
+    /** stack of ELM commands to be sent */
+    static final Stack<String> cmdStack = new Stack<String>();
     /** freeze frame ID to request */
     private int freezeFrame_Id = 0;
     /** perform reset on NRC reception */
@@ -408,25 +411,25 @@ public class ObdProt extends ProtoHeader
         resetFixedPid();
 
         HashMap<String, EcuDataPv> newList = new HashMap<String, EcuDataPv>();
-        for (Integer currPid : pidSupported)
+        for (ObdPid currPid : pidSupported)
         {
-            Vector<EcuDataItem> items = dataItems.getPidDataItems(obdService, currPid);
+            Vector<EcuDataItem> items = dataItems.getPidDataItems(obdService, currPid.intValue());
             // if no items defined, create dummy item
             if (items == null)
             {
-                log.warning(String.format("unknown PID %02X", currPid));
+                log.warning(String.format("unknown PID %02X", currPid.intValue()));
 
                 // create new dummy item / OneToOne conversion
                 Conversion[] dummyCnvs = {EcuConversions.dfltCnv, EcuConversions.dfltCnv};
-                EcuDataItem newItem = new EcuDataItem(currPid, 0, 0, 0, 32, 0xFFFFFFFF, dummyCnvs,
-                                                      "%#08x", null, null,
-                                                      String.format("PID %02X", currPid),
-                                                      String.format("PID_%02X", currPid)
+                EcuDataItem newItem = new EcuDataItem(currPid.intValue(), 0, 0, 0, 32, 0xFFFFFFFF, dummyCnvs,
+                                                      "%#08x", null, null, 0,
+                                                      String.format("PID %02X", currPid.intValue()),
+                                                      String.format("PID_%02X", currPid.intValue())
                                                      );
                 dataItems.appendItemToService(obdService, newItem);
 
                 // re-load data items for this PID
-                items = dataItems.getPidDataItems(obdService, currPid);
+                items = dataItems.getPidDataItems(obdService, currPid.intValue());
             }
             // loop through all items found ...
             for (EcuDataItem pidPv : items)
@@ -450,30 +453,43 @@ public class ObdProt extends ProtoHeader
     {
         currSupportedPid = 0;
 
+        // Clear PID list on initial bitmask (offset 0)
+        if( start == 0)
+        {
+            pidSupported.clear();
+        }
+
         // loop through bits and mark corresponding PIDs as supported
         for (int i = 0; i < 0x1F; i++)
         {
             if ((bitmask & (0x80000000L >> i)) != 0)
             {
-                pidSupported.add(i + start + 1);
+                pidSupported.add(new ObdPid(i + start + 1));
             }
         }
-        log.fine(Long.toHexString(bitmask).toUpperCase() + "(" + Long.toHexString(
-                start) + "):" + pidSupported);
+
+        log.fine(Long.toHexString(bitmask).toUpperCase()
+                     + "(" + Long.toHexString(start) + "):"
+                     + pidSupported);
+
         // if next block may be requested
         if ((bitmask & 1) != 0)
+        {
             // request next block
-            cmdQueue.add(String.format("%02X%02X", obdService, start + 0x20));
+            cmdStack.add(String.format("%02X%02X", obdService, start + 0x20));
+        }
         else
+        {
             // setup PID PVs
             preparePidPvs(obdService, pvList);
+        }
     }
 
     /** Holds value of property numCodes. */
     private int numCodes;
 
     /** fixed PIDs to limit PID loop to single access */
-    private static final Vector<Integer> fixedPids = new Vector<Integer>();
+    private static final Vector<ObdPid> fixedPids = new Vector<ObdPid>();
 
     /**
      * Set fixed PID for faster data update
@@ -481,14 +497,11 @@ public class ObdProt extends ProtoHeader
      */
     public static synchronized void setFixedPid(int[] pidCodes)
     {
-        int curr;
-        currSupportedPid = 0;
-        for (Integer aPidSupported : pidSupported)
+        for (ObdPid currPid : pidSupported)
         {
-            curr = aPidSupported;
-            if (Arrays.binarySearch(pidCodes, curr) >= 0)
+            if (Arrays.binarySearch(pidCodes, currPid.intValue()) >= 0)
             {
-                fixedPids.add(curr);
+                fixedPids.add(currPid);
             }
         }
     }
@@ -504,17 +517,27 @@ public class ObdProt extends ProtoHeader
      */
     synchronized Integer getNextSupportedPid()
     {
-        Vector<Integer> pidsToCheck = (fixedPids.size() > 0) ? fixedPids : pidSupported;
         Integer result = 0;
-
-        if (pidsToCheck.size() > 0)
+        /* get corresponding PID list */
+        Vector<ObdPid> pidsToCheck = (fixedPids.size() > 0) ? fixedPids : pidSupported;
+        try
         {
-            result = pidsToCheck.get(currSupportedPid);
-            currSupportedPid++;
-            currSupportedPid %= (pidsToCheck.size());
-            pidsWrapped = (currSupportedPid == 0);
+            /* sort by next expected request */
+            Collections.sort(pidsToCheck, ObdPid.requestSorter);
+            ObdPid pid = pidsToCheck.firstElement();
+            /* detect wrap around in PID list */
+            pidsWrapped = pid.getNextRequest() != 0;
+            /* mark PID as handled */
+            pid.setNextRequest(System.currentTimeMillis());
+            /* and return first list element */
+            result = pid.intValue();
         }
-        return (result);
+        catch(Exception e)
+        {
+            /* ignore */
+        }
+
+        return result;
     }
 
     /**
@@ -602,7 +625,10 @@ public class ObdProt extends ProtoHeader
                             case 0xA0:
                             case 0xC0:
                             case 0xE0:
-                                long msgPayload = Long.valueOf(new String(getPayLoad(buffer,8)), 16);
+                                // Check for optional message count byte, find offset to payload
+                                int offset = (buffer.length % 4 == 0) ? 4 : 6;
+                                // get payload data and mark the indicated supported PIDs
+                                long msgPayload = Long.valueOf(new String(buffer, offset, 8), 16);
                                 markSupportedPids(msgService, msgPid, msgPayload, PidPvs);
                                 break;
 
@@ -614,16 +640,25 @@ public class ObdProt extends ProtoHeader
                                 setNumCodes(Long.valueOf(msgPayload).intValue());
                                 // no break here ...
                             default:
-                                dataItems.updateDataItems(msgService,
-                                                          msgPid,
-                                                          hexToBytes(String.valueOf(
-                                                                  getPayLoad(buffer))));
+                                long updatePeriod =
+                                    dataItems.updateDataItems(msgService,
+                                                            msgPid,
+                                                            hexToBytes(String.valueOf(
+                                                                    getPayLoad(buffer))));
+                                /* Update expected request timestamp for PID */
+                                for( ObdPid pid : pidSupported)
+                                {
+                                    if(pid.intValue()==msgPid)
+                                    {
+                                        pid.setNextRequest(System.currentTimeMillis()+updatePeriod);
+                                    }
+                                }
                                 break;
                         }
                         break;
 
-                    // get vehicle information (mode 9)
-                    case OBD_SVC_VEH_INFO:
+                    case OBD_SVC_CTRL_MODE: // Test control mode
+                    case OBD_SVC_VEH_INFO:  // get vehicle information (mode 9)
                         msgPid = (Integer) getParamValue(ID_OBD_PID, buffer);
                         switch (msgPid)
                         {
@@ -635,15 +670,27 @@ public class ObdProt extends ProtoHeader
                             case 0xA0:
                             case 0xC0:
                             case 0xE0:
-                                long msgPayload = Long.valueOf(new String(getPayLoad(buffer,8)), 16);
+                                // Check for optional message count byte, find offset to payload
+                                int offset = (buffer.length % 4 == 0) ? 4 : 6;
+                                // get payload data and mark the indicated supported PIDs
+                                long msgPayload = Long.valueOf(new String(buffer, offset, 8), 16);
                                 markSupportedPids(msgService, msgPid, msgPayload, VidPvs);
                                 break;
 
                             default:
-                                dataItems.updateDataItems(msgService,
-                                                          msgPid,
-                                                          hexToBytes(String.valueOf(
-                                                                  getPayLoad(buffer))));
+                                long updatePeriod =
+                                    dataItems.updateDataItems(msgService,
+                                                                msgPid,
+                                                                hexToBytes(String.valueOf(
+                                                                        getPayLoad(buffer))));
+                                /* Update expected request timestamp for PID */
+                                for( ObdPid pid : pidSupported)
+                                {
+                                    if(pid.intValue()==msgPid)
+                                    {
+                                        pid.setNextRequest(System.currentTimeMillis()+updatePeriod);
+                                    }
+                                }
                                 break;
                         }
                         break;
@@ -684,6 +731,8 @@ public class ObdProt extends ProtoHeader
                                                            "customer.specific.trouble.code.see.manual"));
                                 }
                                 log.fine(String.format("+DFC: %04x: %s", key, code.toString()));
+                                // Remember received message service to know code status
+                                code.put(EcuCodeItem.FID_STATUS, Integer.valueOf(msgService));
                                 tCodes.put(key, code);
                                 // if number of codes hasn't been delivered yet ...
                                 if(!hasNumCodes)
@@ -767,7 +816,7 @@ public class ObdProt extends ProtoHeader
         // switch off any active service
         setService(OBD_SVC_NONE, true);
         // clear command queue
-        cmdQueue.clear();
+        cmdStack.clear();
         // clear supported PIDs
         pidSupported.clear();
         // reset fixed PIDs
@@ -801,6 +850,7 @@ public class ObdProt extends ProtoHeader
                 break;
 
             case OBD_SVC_VEH_INFO:
+            case OBD_SVC_CTRL_MODE:
                 // Clear data items
                 pidSupported.clear();
                 VidPvs.clear();
@@ -834,7 +884,10 @@ public class ObdProt extends ProtoHeader
 
             case OBD_SVC_DATA:
             case OBD_SVC_FREEZEFRAME:
-                // request for PID's supported
+            case OBD_SVC_CTRL_MODE:
+            case OBD_SVC_VEH_INFO:
+                // read vehicle information
+                // request for PID/TID's supported
                 writeTelegram(emptyBuffer, obdService, 0);
                 break;
 
@@ -842,10 +895,12 @@ public class ObdProt extends ProtoHeader
             case OBD_SVC_PENDINGCODES:
             case OBD_SVC_PERMACODES:
                 numCodes = 0;
+                // Queue requests for reading all trouble codes
+                cmdStack.add(String.format("%02X", OBD_SVC_READ_CODES));
+                cmdStack.add(String.format("%02X", OBD_SVC_PENDINGCODES));
+                cmdStack.add(String.format("%02X", OBD_SVC_PERMACODES));
                 // read PID number of codes ...
-                cmdQueue.add("0101");
-                // read trouble codes
-                writeTelegram(emptyBuffer, obdService, 0);
+                writeTelegram(emptyBuffer, OBD_SVC_DATA, 1);
                 break;
 
             case OBD_SVC_CLEAR_CODES:
@@ -861,12 +916,6 @@ public class ObdProt extends ProtoHeader
                 }
                 break;
 
-            case OBD_SVC_VEH_INFO:
-                // read vehicle information
-                writeTelegram(emptyBuffer, obdService, 0);
-                break;
-
-            case OBD_SVC_CTRL_MODE:
             case OBD_SVC_O2_RESULT:
             case OBD_SVC_MON_RESULT:
             default:

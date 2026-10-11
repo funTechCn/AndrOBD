@@ -11,27 +11,14 @@
     <string name="action_connect">Se connecter</string>
     <string name="obd_none">Pas de service</string>
     <string name="obd_services">Services OBD</string>
-    <string name="obd_veh_info">Infos OBD du Véhicule</string>
+    <string name="obd_veh_info">Infos OBD du véhicule</string>
     <string name="obd_data">Données OBD</string>
     <string name="service_freezeframes">Trames OBD figées</string>
     <string name="obd_codes">Codes d\'erreurs OBD</string>
     <string name="obd_permanentcodes">Codes d\'erreur OBD (permanents)</string>
     <string name="obd_pendingcodes">Codes d\'erreur OBD (actuels)</string>
     <string name="obd_clearcodes">Effacer les codes d\'erreur</string>
-    <string name="obd_clear_info">"Cela va remettre à zéro le voyant moteur et effacer toutes les infos de diagnostic dont :
-\n  - Les codes Erreurs
-\n  - Les trames de données figées
-\n  - Les données du test du capteur O2
-\n  - L\'état du test du système de surveillance
-\n  - Les résultats des test du système de surveillance
-\n  - La distance parcourue depuis la dernière révision
-\n  - Le nombre de démarrage depuis la dernière RàZ
-\n  - La distance parcourue depuis la dernière RàZ
-\n  - La durée de fonctionnement moteur depuis la dernière révision
-\n  - Le temps écoulé depuis la dernière RàZ des codes défauts standards (DTC)
-\n  
-\n  D\'autres remises à zéro ou suppression peuvent se produire selon les véhicules.
-\n  L\'effacement de certaines données peut détériorer le fonctionnement du véhicule le temps que l\'ECU se recalibre."</string>
+    <string name="obd_clear_info">"Ceci va remettre à zéro le voyant moteur et effacer toutes les informations\n de diagnostic dont :\n - Les codes Erreurs\n - Les trames de données figées\n  - Les données du test du capteur O2\n  - L\'état du test du système de surveillance\n  - Les résultats des test du système de surveillance\n  - La distance parcourue depuis la dernière révision\n  - Le nombre de démarrage depuis la dernière RàZ\n  - La distance parcourue depuis la dernière RàZ\n  - La durée de fonctionnement moteur depuis la dernière révision\n  - Le temps écoulé depuis la dernière RàZ des codes défauts standards (DTC)\n\n  D\'autres remises à zéro ou suppression peuvent se produire selon les véhicules.\n  L\'effacement de certaines données peut détériorer le fonctionnement du véhicule \n  le temps que l\'ECU se recalibre."</string>
     <!--  BtDeviceListActivity -->
     <string name="select_device">Choisir un adaptateur</string>
     <string name="none_paired">Aucun appareil appairé</string>
@@ -96,30 +83,28 @@
     <string name="obd_options">Options OBD</string>
     <string name="obd_opt_description">Options du protocole OBD / de communication avec le véhicule</string>
     <string name="select_protocol">Protocole OBD préféré</string>
-    <string name="select_fault_code">Choisir un code d\'erreur…</string>
-    <string name="select_medium">Type d\'adaptateur…</string>
+    <string name="select_fault_code">Choisir un code d\'erreur …</string>
+    <string name="select_medium">Type d\'adaptateur …</string>
     <string name="devices_found">%d appareil(s) USB trouvé(s)</string>
     <string name="min_elm_timeout">Timeout min. pour l\'ELM (ms)</string>
     <string name="unabletoconnect">Impossible de connecter l\'appareil</string>
-    <string name="connectionlost">La connexion est perdue</string>
-    <string name="elm_timeout_descr">Délai d\'attente min. pour la réponse de l\'ELM (ms)</string>
-    <string name="day_night_mode">Mode Jour/Nuit</string>
-    <string name="night_mode_description">Fond d\'écran sombre</string>
-    <string name="night_mode">Mode nuit</string>
-    <string name="disable_elm_cmds">Commandes ELM inactives</string>
-    <string name="disable_elm_cmds_descr">commandes ELM à activer/désactiver</string>
-    <string name="elm_adaptive_timing">synchro. adaptative ELM</string>
-    <string name="elm_adaptive_timing_descr">Permettre la syncho. adaptative dans les pilotes ELM ?</string>
+    <string name="connectionlost">La connexion vers l\'appareil est perdue</string>
+    <string name="elm_timeout_descr">Délai d\'attente min. (ms) pour attendre réponse d\'ELM</string>
+    <string name="day_night_mode">Mode d’affichage jour/nuit</string>
+    <string name="disable_elm_cmds">Commandes ELM inactivées</string>
+    <string name="disable_elm_cmds_descr">activer/désactiver commandes ELM</string>
+    <string name="elm_adaptive_timing">Synchro adaptative ELM</string>
+    <string name="elm_adaptive_timing_descr">Permettre gestion adaptative du timing dans pilotes ELM ?</string>
     <string name="elm_reset_on_nrc">Reinit. sur NRC</string>
-    <string name="elm_reset_on_nrc_descr">Réinit. l\'ELM sur erreur NRC ?</string>
-    <string name="select_ecu_addr">Choisir l\'adresse de l\'ECU…</string>
+    <string name="elm_reset_on_nrc_descr">Réinitialiser l’adaptateur ELM sur erreur NRC ?</string>
+    <string name="select_ecu_addr">Choisir l\'adresse de l\'ECU …</string>
     <string name="disconnect">Déconnecter</string>
-    <string name="reset_preselections">Réinit. les dernières pré-sélections</string>
-    <string name="use_last_settings_description">Utiliser les derniers paramètres au démarrage (Adresse Bluetooth, addresse ECU, éléments affichés ...)</string>
-    <string name="use_last_settings">Utiliser les derniers paramètres</string>
-    <string name="common_settings_description">Réglages communs de contrôle de l\'appli</string>
+    <string name="reset_preselections">Réinit. dernières pré-sélections</string>
+    <string name="use_last_settings_description">Utiliser derniers paramètres au démarrage (adresse Bluetooth, addresse ECU, éléments affichés ...)</string>
+    <string name="use_last_settings">Utiliser derniers paramètres</string>
+    <string name="common_settings_description">Réglages communs pour contrôle de l\'appli</string>
     <string name="secure_connect">Connexion sécurisée</string>
-    <string name="secure_connect_description">Utiliser une connexion Bluetooth cryptée</string>
+    <string name="secure_connect_description">Utiliser connexion Bluetooth cryptée</string>
     <string name="elm_options">Options ELM</string>
     <string name="elm_custom_init">Init. perso. de l\'ELM</string>
     <string name="elm_custom_init_descr">Commandes perso. d\'init. de l\'ELM</string>
@@ -127,12 +112,12 @@
     <string name="UNDEFINED">Non défini(e)</string>
     <string name="INITIALIZING">Initialisation…</string>
     <string name="INITIALIZED">Initialisé(e)</string>
-    <string name="ECU_DETECT">Détection de l\'ECU…</string>
+    <string name="ECU_DETECT">Détection ECU…</string>
     <string name="ECU_DETECTED">ECU détectée</string>
     <string name="CONNECTING">Connexion…</string>
     <string name="CONNECTED">Connecté(e)</string>
     <string name="NODATA">Pas de donnée</string>
-    <string name="STOPPED">Arrété(e)</string>
+    <string name="STOPPED">Arrêté(e)</string>
     <string name="DISCONNECTED">Déconnecté(e)</string>
     <string name="BUSERROR">Erreur du BUS</string>
     <string name="DATAERROR">Erreur de donnée</string>
@@ -169,16 +154,45 @@
     <string name="toolbar_overlay">Afficher en superposition</string>
     <string name="toolbar_overlay_sum">Afficher la barre de menus par dessus l’écran principal</string>
     <string name="license">Licences…</string>
-    <string name="donation">Projets supports…</string>
+    <string name="donation">Projets supports …</string>
     <string name="libraries">Bibliothèques…</string>
     <string name="libraries_sum">Bibliothèques utilisées…</string>
-    <string name="release_history">Historique des versions…</string>
+    <string name="release_history">Historique des versions …</string>
     <string name="graphic_design">Design graphique</string>
-    <string name="plugin_data">Données du greffon</string>
     <string name="long_press_dfc_hint">Pressez longuement DFC pour la recherche en ligne…</string>
-    <string name="process_vars">Traîter les variables</string>
-    <string name="unfilter">Supprimer le filtre</string>
-    <string name="plugin_manager_desc">Gestionnaire pour les greffons détectés</string>
-    <string name="graph_actions">Actions du graphique</string>
-    <string name="master">maître</string>
+    <string name="comm_baudrate">Taux de baud ELM</string>
+    <string name="comm_baudrate_description">Vitesse de communication en série USB</string>
+    <string name="copied_to_clipboard">Copié dans le presse-papier</string>
+    <string name="obd_test_progress">Test de contrôle de ODB en cours.
+\nVeuillez vérifier le comportement du véhicule.</string>
+    <string name="obd_test_confirm">Contrôle de test de ODB demandé.
+\n
+\nCe test peut générer :
+\n- Une déplacement du véhicule
+\n- De la fumée d\'échappement
+\n- Une haute température d\'échappement
+\n- Un bruit fort du moteur
+\n- Des vapeurs de carburant
+\n- etc.
+\n
+\nVeillez à passer ce test de contrôle dans un environnement assez sûr car vous êtes seul responsable !</string>
+    <string name="service_testcontrol">Contrôle de test de ODB</string>
+    <string name="full_screen_display">Affichage plein-écran</string>
+    <string name="customize_display">Personnaliser les données d\'affichage</string>
+    <string name="display_range">Intervalle d\'affichage</string>
+    <string name="full_screen_display_description">Utiliser le plein-écran pour l\'affichage de l\'application</string>
+    <string name="display_color">Couleur d\'affichage</string>
+    <string name="reset_default">Par défaut</string>
+    <string name="update_period_s">Fréquence de mise à jour [s]</string>
+    <string name="select_ble_device">Sélectionner adaptateur BLE</string>
+    <string name="language_selection_description">Sélectionner langue d\'application</string>
+    <string name="language_system_default">Prédéfini dans système</string>
+    <string name="language_english">Anglais</string>
+    <string name="language_russian">Russe</string>
+    <string name="language_italian">Italien</string>
+    <string name="language_german">Allemand</string>
+    <string name="language_spanish">Espagnol</string>
+    <string name="restart_required">Redémarrage requis pour appliquer le changement de langue</string>
+    <string name="no_obd_files_found">Aucun fichier OBD trouvé</string>
+    <string name="language_french">Français</string>
 </resources>

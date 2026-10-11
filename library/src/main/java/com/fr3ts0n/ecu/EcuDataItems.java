@@ -45,9 +45,14 @@ import java.util.logging.Logger;
  */
 public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDataItem>>>
 {
-	/** SerialVerion UID */
+	/**
+	 * SerialVersion UID
+	 */
 	private static final long serialVersionUID = 5525561909111851836L;
-	/** CSV field positions */
+
+	/**
+	 * CSV field positions
+	 */
 	enum FLD
 	{
 		SVC,
@@ -61,6 +66,7 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 		FORMAT,
 		MIN,
 		MAX,
+		UPDATE_MIN,
 		MNEMONIC,
 		LABEL,
 		DESCRIPTION,
@@ -71,6 +77,8 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 	public static EcuConversions cnv;
 	// the data logger
 	private static final Logger log = Logger.getLogger("data.items");
+	// map of MNEMONIC data item
+	public static final HashMap<String, EcuDataItem> byMnemonic = new HashMap<>();
 
 	/**
 	 * Create data items from default CSV pidResource files
@@ -78,14 +86,15 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 	 */
 	public EcuDataItems()
 	{
-		this( "prot/obd/res/pids.csv",
-              "prot/obd/res/conversions.csv",
-              "com.fr3ts0n.ecu.prot.obd.res.messages");
+		this("prot/obd/res/pids.csv",
+		     "prot/obd/res/conversions.csv",
+		     "com.fr3ts0n.ecu.prot.obd.res.messages");
 	}
 
 	/**
 	 * Create data items from CSV pidResource file
-	 * @param pidResource resource file for PIDs (csv)
+	 *
+	 * @param pidResource        resource file for PIDs (csv)
 	 * @param conversionResource resource file for conversions (csv)
 	 */
 	public EcuDataItems(String pidResource, String conversionResource, String resourceBundleName)
@@ -153,6 +162,11 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 				catch(NumberFormatException ex) {	/* ignore */ }
 				try {	maxVal = Float.parseFloat(params[FLD.MAX.ordinal()]);	}
 				catch(NumberFormatException e) { /* ignore */	}
+
+				long updateVal = 0;
+				try {	updateVal = Long.parseLong(params[FLD.UPDATE_MIN.ordinal()]);	}
+				catch(NumberFormatException ex) { updateVal = 0; }
+
 				String label = Messages.getString(params[FLD.MNEMONIC.ordinal()],
 				                                  params[FLD.LABEL.ordinal()]);
 				// create linear conversion
@@ -166,8 +180,12 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 										 params[FLD.FORMAT.ordinal()],
 										 minVal,
 										 maxVal,
+										 updateVal,
 										 label,
 					                     params[FLD.MNEMONIC.ordinal()]);
+
+				// Add item to mnemonic map
+				byMnemonic.put(params[FLD.MNEMONIC.ordinal()], newItm);
 
 				// enter data item for all specified services
 				String[] services = params[FLD.SVC.ordinal()].split(","); //$NON-NLS-1$
@@ -214,7 +232,7 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 		HashMap<Integer, Vector<EcuDataItem>> currSvc = get(service);
 		if (currSvc != null)
 		{
-			for(Vector<EcuDataItem> currVec : currSvc.values())
+			for (Vector<EcuDataItem> currVec : currSvc.values())
 			{
 				result.addAll(currVec);
 			}
@@ -223,7 +241,29 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 	}
 
 	/**
+	 * Notify about a change of conversion factors
+	 *
+	 * - Updates MIN/MAX range of all items using specified conversion
+	 *
+	 * @param conversion Conversion which notifies changes
+	 */
+	protected static void notifyConversionChange(NumericConversion conversion)
+	{
+		// Loop through all items ...
+		for (EcuDataItem item : byMnemonic.values())
+		{
+			// If item uses specified conversion ...
+			if(item.cnv[EcuDataItem.cnvSystem] == conversion)
+			{
+				// update MIN/MAX limits of item
+				item.updateLimits(null, null);
+			}
+		}
+	}
+
+	/**
 	 * append new data item to specified service
+	 *
 	 * @param service service to add item to
 	 * @param newItem EcuDataItem to be added
 	 */
@@ -253,7 +293,7 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 		// update map of services
 		put(service, currSvc);
 		// debug message of new enty
-		log.finer("+" + service + "/" + String.format("0x%02X",newItem.pid) + " - " + currVec); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		log.finer("+" + service + "/" + String.format("0x%02X", newItem.pid) + " - " + currVec); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 	}
 
 	/**
@@ -262,17 +302,22 @@ public class EcuDataItems extends HashMap<Integer, HashMap<Integer, Vector<EcuDa
 	 * @param service service of current data
 	 * @param pid     pid of current data
 	 * @param buffer  data buffer to do conversions on
+	 * @return Next expected update interval
 	 */
-	public void updateDataItems(int service, int pid, char[] buffer)
+	public long updateDataItems(int service, int pid, char[] buffer)
 	{
-		EcuDataItem currItm;
-		Vector<EcuDataItem> currItms = getPidDataItems(service, pid);
+		long nextUpdate = 0;
 
-		for (EcuDataItem currItm1 : currItms)
+		Vector<EcuDataItem> currItms = getPidDataItems(service, pid);
+		if(currItms != null)
 		{
-			currItm = currItm1;
-			currItm.updatePvFomBuffer(buffer);
+			for (EcuDataItem currItm : currItms)
+			{
+				long currItmUpdate = currItm.updatePvFomBuffer(buffer);
+				nextUpdate = Math.max(nextUpdate, currItmUpdate);
+			}
 		}
+		return nextUpdate;
 	}
 
 }

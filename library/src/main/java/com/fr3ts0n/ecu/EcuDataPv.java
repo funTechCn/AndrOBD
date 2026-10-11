@@ -43,6 +43,8 @@ public class EcuDataPv extends IndexedProcessVar
 	public static final String FID_MAX = "MAX";
 	public static final String FID_BIT_OFS = "BIT_OFS";
 	public static final String FID_MNEMONIC = "MNEMONIC";
+	public static final String FID_COLOR = "COLOR";
+	public static final String FID_UPDT_PERIOD = "PERIOD";
 
 	public static final String[] FIELDS =
 		{
@@ -80,21 +82,21 @@ public class EcuDataPv extends IndexedProcessVar
 		String result = "";
 		try
 		{
-			// Attempt to get units from field
-			result = get(FID_UNITS).toString();
+			// Try to get from assigned conversion
+			Conversion[] cnv = (Conversion[]) get(FID_CNVID);
+			if(cnv != null && cnv[EcuDataItem.cnvSystem] != null)
+			{
+				result = cnv[EcuDataItem.cnvSystem].getUnits();
+			}
+			else
+			{
+				// Attempt to get units from field
+				result = get(FID_UNITS).toString();
+			}
 		}
 		catch(Exception ex)
 		{
-            // if not available, try to get from assigned conversion
-			Conversion[] cnv = (Conversion[]) get(FID_CNVID);
-            if(cnv != null && cnv[EcuDataItem.cnvSystem] != null)
-            {
-                result = cnv[EcuDataItem.cnvSystem].getUnits();
-            }
-			else
-			{
-				result="";
-			}
+			result="";
 		}
 		return result;
 	}
